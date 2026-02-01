@@ -1,108 +1,93 @@
-# URL Security Scanner
+# URL Security Scanner v2
 
-Fast, lightweight security scanner for any website URL. Perfect for quick security assessments when you only have a URL.
+Security scanner for vibe coders. Scan any website, get friendly reports, make connections.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
 npm install
-
-# Build
 npm run build
-
-# Scan a URL
-npm run scan -- https://example.com
+node dist/index.js https://example.com --outreach --gist
 ```
+
+## What It Does
+
+Scans websites for common security issues and generates:
+- **Human report** - Beginner-friendly with analogies
+- **Agent report** - Technical, for AI assistants to fix
+- **DM message** - Ready to copy-paste for X outreach
 
 ## Usage
 
 ```bash
 # Basic scan
-url-scanner https://example.com
+node dist/index.js https://example.com
 
-# Verbose output (see progress)
-url-scanner https://example.com --verbose
+# Outreach mode (generates reports + DM)
+node dist/index.js https://example.com --outreach
 
-# Save report to file
-url-scanner https://example.com --output report.md
-
-# Compact report (for quick sharing)
-url-scanner https://example.com --compact
+# Outreach + auto-upload to GitHub Gist
+node dist/index.js https://example.com --outreach --gist
 ```
 
 ## What It Checks
 
 | Check | Description |
 |-------|-------------|
-| **Security Headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
-| **SSL/TLS** | Certificate validity, expiration, TLS version |
-| **Exposed Files** | .env, .git, config files, backups, source maps, debug files |
-| **Cookie Security** | HttpOnly, Secure, SameSite flags |
-| **CORS** | Misconfigured cross-origin policies |
-| **Server Info** | Version disclosure in headers |
-| **Admin Paths** | Common admin panels, login pages, debug endpoints |
-| **robots.txt** | Sensitive paths revealed in robots.txt |
+| **DNS Security** | SPF, DKIM, DMARC (email spoofing protection) |
+| **API Keys** | Exposed keys in JavaScript (OpenAI, Stripe, AWS, etc.) |
+| **Security Headers** | CSP, HSTS, X-Frame-Options, etc. |
+| **SSL/TLS** | Certificate validity, expiration |
+| **Exposed Files** | .env, .git, source maps (with content validation) |
+| **Tech Stack** | Framework and hosting detection |
 
-## Report Format
+## Grading System
 
-The report includes:
-
-1. **Friendly Summary** - Plain English explanation of findings
-2. **Detailed Issues** - Each issue with severity and description
-3. **AI Agent Section** - Copy-paste instructions for Claude/ChatGPT to fix issues
-4. **Technical Details** - Raw data for debugging
-
-## Exit Codes
-
-- `0` - No critical or high issues
-- `1` - High-priority issues found
-- `2` - Critical issues found
-- `3` - Scan failed (network error, etc.)
+- **A** (90-100): Looking solid
+- **B** (75-89): Good with minor issues
+- **C** (60-74): Needs attention
+- **D** (40-59): Several issues
+- **F** (<40): Serious problems
 
 ## Example Output
 
 ```
-# Security Scan Report
+🎯 Outreach Package Ready for: glowhub.space
 
-**Website:** https://example.com
-**Scanned:** 1/31/2025, 10:30:00 AM
-**Duration:** 5.2s
+   Grade: D (54/100)
+   Issues: 0 critical, 1 high, 4 medium
 
-## Quick Summary
+📨 DM Message (copy this):
+────────────────────────────────────────
+Hey! Saw your site in the chat - looks great.
 
-🔴 **Issues Found:** 3 high-priority issues you should fix soon.
+Ran a quick security check (I do this for fun). Found something worth mentioning:
 
-| Check | Result |
-|-------|--------|
-| Security Headers | ❌ 4 issues |
-| SSL/TLS | ✅ Pass |
-| Exposed Files | ✅ Pass |
-| Cookie Security | ❌ 2 issues |
-| CORS Configuration | ✅ Pass |
-| Server Information | ❌ 1 issue |
-| Admin Paths | ✅ Pass |
-| robots.txt Analysis | ✅ Pass |
+No SPF record - anyone can send emails pretending to be you (@glowhub.space).
+Someone could email your users "from you" with phishing links. One-line DNS fix.
 
-## 🤖 Paste This To Your AI Agent
-
-Copy everything below and paste it to Claude, ChatGPT, or your AI coding assistant to fix these issues:
-
-[Fix instructions here...]
+Got a detailed report here if you want it: [gist-url]
+────────────────────────────────────────
 ```
 
-## Development
+## Project Structure
 
-```bash
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Run directly with ts-node (for development)
-npx ts-node src/index.ts https://example.com
 ```
+src/
+├── index.ts          # CLI entry point
+├── scanner.ts        # Orchestrates checks
+├── checks/           # Individual security checks
+├── report/           # Report generators (human, agent, DM)
+└── integrations/     # GitHub Gist upload
+
+outputs/              # Generated reports
+archive/              # Old planning docs
+```
+
+## Requirements
+
+- Node.js 18+
+- GitHub CLI (`gh`) for gist uploads
 
 ## License
 
