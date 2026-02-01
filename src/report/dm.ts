@@ -2,55 +2,80 @@ import { ScanResult, SecurityIssue } from '../types';
 import { SecurityScore } from './score';
 
 /**
- * Short, friendly descriptions for DM messages
- * Written like you're texting a friend, not writing a security report
- * NO jargon - explain like they're 10 years old
+ * High-impact issue explanations - explain the ACTUAL RISK
+ * These get special treatment in DMs because they're serious
  */
-const FRIENDLY_ISSUE_NAMES: Record<string, string> = {
-  // Email security
-  'No SPF record': 'anyone can send emails pretending to be you',
-  'No DMARC record': 'email spoofing protection is missing',
-
-  // Headers - explain benefit simply
-  'Content-Security-Policy': 'a security setting that blocks malicious code',
-  'Strict-Transport-Security': 'a setting to force secure connections',
-  'X-Frame-Options': 'a setting to prevent your site being copied/faked',
-  'X-Content-Type-Options': 'a small security tweak',
-  'Referrer-Policy': 'a privacy setting',
-  'Permissions-Policy': 'a browser permissions setting',
-
-  // The big ones - these matter, be clear
-  'API Key': 'an API key sitting in your public code',
-  'OpenAI': 'your OpenAI key is visible (someone could use it)',
-  'Stripe': 'a Stripe key visible in your code',
-  'AWS': 'AWS credentials in your code',
-  'GitHub': 'a GitHub token in your code',
-  'Anthropic': 'your Claude API key is visible',
-  'MongoDB': 'your database password is in the code',
-  'Postgres': 'database credentials are visible',
-
-  // Files
-  'Environment file': 'your .env file is publicly visible',
-  'Git config': 'your code history is exposed',
-  'Source map': 'your original source code is visible',
-  'Database': 'a database backup is accessible',
+const HIGH_IMPACT_EXPLANATIONS: Record<string, { short: string; risk: string }> = {
+  'No SPF record': {
+    short: 'No SPF record',
+    risk: 'anyone can send emails pretending to be you (@{domain}). Someone could email your users "from you" with phishing links. One-line DNS fix.'
+  },
+  'No DMARC record': {
+    short: 'No DMARC record',
+    risk: 'email spoofing protection is missing - works with SPF to stop fake emails.'
+  },
+  'API Key': {
+    short: 'Exposed API key',
+    risk: 'someone could use your API key and rack up charges on your account.'
+  },
+  'OpenAI': {
+    short: 'OpenAI key exposed',
+    risk: 'your OpenAI key is in your public code - someone could use it and you\'d get the bill.'
+  },
+  'Stripe': {
+    short: 'Stripe key exposed',
+    risk: 'payment credentials visible in your code - this needs fixing ASAP.'
+  },
+  'AWS': {
+    short: 'AWS credentials exposed',
+    risk: 'AWS keys in your code - someone could spin up servers on your account.'
+  },
+  'Environment file': {
+    short: '.env file exposed',
+    risk: 'your secrets file is publicly accessible - passwords, API keys, everything in there is visible.'
+  },
 };
 
 /**
- * Get a friendly name for an issue
- * Format: "Technical Term - simple explanation"
- * This helps both humans understand AND gives AI agents the technical context to fix
+ * Lower-priority issues - still mention but don't emphasize
  */
-function getFriendlyName(issue: SecurityIssue): string {
-  for (const [key, friendly] of Object.entries(FRIENDLY_ISSUE_NAMES)) {
+const MINOR_ISSUE_NAMES: Record<string, string> = {
+  'Content-Security-Policy': 'CSP header (blocks malicious scripts)',
+  'X-Frame-Options': 'clickjacking protection',
+  'X-Content-Type-Options': 'MIME sniffing protection',
+  'Strict-Transport-Security': 'HTTPS enforcement',
+  'Referrer-Policy': 'privacy setting',
+  'Permissions-Policy': 'browser permissions',
+  'Git config': 'git config exposed',
+  'Source map': 'source maps visible',
+};
+
+/**
+ * Check if an issue is high-impact (deserves full explanation)
+ */
+function getHighImpactExplanation(issue: SecurityIssue, domain: string): { short: string; risk: string } | null {
+  for (const [key, explanation] of Object.entries(HIGH_IMPACT_EXPLANATIONS)) {
     if (issue.title.includes(key) || issue.description.includes(key)) {
-      // Return both technical term and friendly explanation
-      return `${key} - ${friendly}`;
+      return {
+        short: explanation.short,
+        risk: explanation.risk.replace('{domain}', domain)
+      };
     }
   }
-  // Fallback: use title but make it lowercase and friendly
-  const technicalTerm = issue.title.replace(/^Missing\s+/i, '').replace(/\s+header$/i, '');
-  return `${technicalTerm} - security setting that could be improved`;
+  return null;
+}
+
+/**
+ * Get a short name for minor issues
+ */
+function getMinorIssueName(issue: SecurityIssue): string {
+  for (const [key, name] of Object.entries(MINOR_ISSUE_NAMES)) {
+    if (issue.title.includes(key) || issue.description.includes(key)) {
+      return name;
+    }
+  }
+  // Fallback
+  return issue.title.replace(/^Missing\s+/i, '').replace(/\s+header$/i, '').toLowerCase();
 }
 
 /**
@@ -81,13 +106,14 @@ function prioritizeForDm(issues: SecurityIssue[]): SecurityIssue[] {
 
 /**
  * Generate DM message - single message with link included
- * Clean, friendly, no pressure
+ * Explains the ACTUAL RISK for high-impact issues
  */
 export function generateDmMessage(
   result: ScanResult,
   _score: SecurityScore,
   gistUrl?: string
 ): string {
+  const domain = new URL(result.url).hostname;
   const allIssues = result.checks.flatMap(c => c.issues);
 
   // Get top issues, prioritized for understandability
@@ -95,13 +121,20 @@ export function generateDmMessage(
   const filtered = prioritized
     .filter(i => i.severity === 'critical' || i.severity === 'high' || i.severity === 'medium');
 
-  // Dedupe by category - only show one issue per category in DM
+  // Separate high-impact issues from minor ones
+  const highImpact: { issue: SecurityIssue; explanation: { short: string; risk: string } }[] = [];
+  const minor: SecurityIssue[] = [];
   const seenCategories = new Set<string>();
-  const topIssues: SecurityIssue[] = [];
+
   for (const issue of filtered) {
-    if (!seenCategories.has(issue.category) && topIssues.length < 3) {
-      seenCategories.add(issue.category);
-      topIssues.push(issue);
+    if (seenCategories.has(issue.category)) continue;
+    seenCategories.add(issue.category);
+
+    const explanation = getHighImpactExplanation(issue, domain);
+    if (explanation) {
+      highImpact.push({ issue, explanation });
+    } else {
+      minor.push(issue);
     }
   }
 
@@ -110,28 +143,44 @@ export function generateDmMessage(
   // Opening
   lines.push(`Hey! Saw your site in the chat - looks great.`);
   lines.push('');
-
-  // The value
-  lines.push(`Ran a quick security check (I do this for fun). Found a few small things:`);
+  lines.push(`Ran a quick security check (I do this for fun). Found something worth mentioning:`);
   lines.push('');
 
-  // List issues
-  for (const issue of topIssues) {
-    const friendly = getFriendlyName(issue);
-    lines.push(`- ${friendly}`);
+  // High-impact issues get full explanation
+  if (highImpact.length > 0) {
+    const main = highImpact[0];
+    lines.push(`${main.explanation.short} - ${main.explanation.risk}`);
+
+    // Additional high-impact issues (if any)
+    for (let i = 1; i < Math.min(highImpact.length, 2); i++) {
+      lines.push('');
+      lines.push(`${highImpact[i].explanation.short} - ${highImpact[i].explanation.risk}`);
+    }
+  }
+
+  // Minor issues get brief mention
+  if (minor.length > 0 && highImpact.length > 0) {
+    lines.push('');
+    const minorNames = minor.slice(0, 3).map(i => getMinorIssueName(i)).join(', ');
+    lines.push(`Also a couple minor things (${minorNames}) but the above is the main one.`);
+  } else if (minor.length > 0) {
+    // Only minor issues found
+    for (const issue of minor.slice(0, 3)) {
+      lines.push(`- ${getMinorIssueName(issue)}`);
+    }
   }
 
   lines.push('');
 
   // Link and close
   if (gistUrl) {
-    lines.push(`Nothing major, easy fixes. Got a detailed report here if you want it: ${gistUrl}`);
+    lines.push(`Got a detailed report here if you want it: ${gistUrl}`);
   } else {
-    lines.push(`Nothing major, easy fixes. Happy to share details if useful!`);
+    lines.push(`Happy to share the full details if useful!`);
   }
 
   lines.push('');
-  lines.push(`You can paste the fixes straight to your AI agent. Happy to help if you have questions.`);
+  lines.push(`The fixes are quick - you can paste them straight to your AI agent. Happy to help if you have questions!`);
 
   return lines.join('\n');
 }
@@ -167,12 +216,13 @@ export function generateTweetSummary(result: ScanResult, score: SecurityScore): 
   }
 
   const topIssue = allIssues[0];
-  const friendly = getFriendlyName(topIssue);
+  const highImpact = getHighImpactExplanation(topIssue, domain);
+  const issueName = highImpact ? highImpact.short : getMinorIssueName(topIssue);
 
   if (score.grade === 'A' || score.grade === 'B') {
-    return `Quick security check on ${domain}: Grade ${score.grade}. Looking good! One small thing: ${friendly}. Easy 5 min fix.`;
+    return `Quick security check on ${domain}: Grade ${score.grade}. Looking good! One small thing: ${issueName}. Easy fix.`;
   } else {
-    return `Quick security check on ${domain}: Grade ${score.grade}. Found ${allIssues.length} things to look at - main one is ${friendly}. Happy to share details!`;
+    return `Quick security check on ${domain}: Grade ${score.grade}. Found ${allIssues.length} things - main one is ${issueName}. Happy to share details!`;
   }
 }
 
