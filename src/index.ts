@@ -53,7 +53,7 @@ OUTPUT:
   Outreach mode:
     - Human-friendly report (report-human.md)
     - Technical agent report (report-agent.md)
-    - DM messages (dm-intro.txt, dm-followup.txt)
+    - DM message (dm.txt)
 
 `;
 
@@ -213,14 +213,11 @@ async function handleOutreachMode(
     }
   }
 
-  // Generate DM messages
+  // Generate DM message
   const dmContent = generateDmContent(result, score, gistUrl, projectName);
 
-  const dmIntroPath = path.join(outputDir, `dm-intro-${domain}.txt`);
-  const dmFollowupPath = path.join(outputDir, `dm-followup-${domain}.txt`);
-
-  fs.writeFileSync(dmIntroPath, dmContent.intro, 'utf-8');
-  fs.writeFileSync(dmFollowupPath, dmContent.followup, 'utf-8');
+  const dmPath = path.join(outputDir, `dm-${domain}.txt`);
+  fs.writeFileSync(dmPath, dmContent.message, 'utf-8');
 
   // Print summary
   console.log('');
@@ -234,8 +231,7 @@ async function handleOutreachMode(
   console.log('📁 Files generated:');
   console.log(`   ${humanPath}`);
   console.log(`   ${agentPath}`);
-  console.log(`   ${dmIntroPath}`);
-  console.log(`   ${dmFollowupPath}`);
+  console.log(`   ${dmPath}`);
   console.log('');
 
   if (gistUrl !== '[gist-url-here]') {
@@ -243,9 +239,9 @@ async function handleOutreachMode(
     console.log('');
   }
 
-  console.log('📨 DM Intro (copy this):');
+  console.log('📨 DM Message (copy this):');
   console.log('─'.repeat(40));
-  console.log(dmContent.intro);
+  console.log(dmContent.message);
   console.log('─'.repeat(40));
   console.log('');
 }

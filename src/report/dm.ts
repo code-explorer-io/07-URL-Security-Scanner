@@ -80,18 +80,17 @@ function prioritizeForDm(issues: SecurityIssue[]): SecurityIssue[] {
 }
 
 /**
- * Generate the intro DM message (no link, just value)
- * This is the first message to establish rapport
+ * Generate DM message - single message with link included
+ * Clean, friendly, no pressure
  */
-export function generateDmIntro(
+export function generateDmMessage(
   result: ScanResult,
-  score: SecurityScore,
-  projectName?: string
+  _score: SecurityScore,
+  gistUrl?: string
 ): string {
-  const domain = new URL(result.url).hostname;
   const allIssues = result.checks.flatMap(c => c.issues);
 
-  // Get top 2-3 issues, prioritized for understandability
+  // Get top issues, prioritized for understandability
   const prioritized = prioritizeForDm(allIssues);
   const filtered = prioritized
     .filter(i => i.severity === 'critical' || i.severity === 'high' || i.severity === 'medium');
@@ -108,20 +107,15 @@ export function generateDmIntro(
 
   const lines: string[] = [];
 
-  // Opening - acknowledge their work
-  if (projectName) {
-    lines.push(`Hey! Love what you're building with ${projectName}.`);
-  } else {
-    lines.push(`Hey! Saw your project - looks cool.`);
-  }
-
+  // Opening
+  lines.push(`Hey! Saw your site in the chat - looks great.`);
   lines.push('');
 
-  // The value proposition
-  lines.push(`Ran a quick security check (I do this for fun) and noticed a couple things:`);
+  // The value
+  lines.push(`Ran a quick security check (I do this for fun). Found a few small things:`);
   lines.push('');
 
-  // List top issues briefly
+  // List issues
   for (const issue of topIssues) {
     const friendly = getFriendlyName(issue);
     lines.push(`- ${friendly}`);
@@ -129,31 +123,35 @@ export function generateDmIntro(
 
   lines.push('');
 
-  // Soft close - no pressure
-  if (topIssues.length > 0) {
-    lines.push(`All easy fixes (5-10 min each). Happy to share the details if useful!`);
+  // Link and close
+  if (gistUrl) {
+    lines.push(`Nothing major, easy fixes. Got a detailed report here if you want it: ${gistUrl}`);
   } else {
-    lines.push(`Looking solid overall! Just a few minor tweaks if you want to polish it up.`);
+    lines.push(`Nothing major, easy fixes. Happy to share details if useful!`);
   }
+
+  lines.push('');
+  lines.push(`You can paste the fixes straight to your AI agent. Happy to help if you have questions.`);
 
   return lines.join('\n');
 }
 
 /**
- * Generate the follow-up DM message (includes gist link)
- * Send this after they respond positively
+ * Legacy function - now just calls generateDmMessage
+ */
+export function generateDmIntro(
+  result: ScanResult,
+  score: SecurityScore,
+  _projectName?: string
+): string {
+  return generateDmMessage(result, score);
+}
+
+/**
+ * Legacy function - kept for compatibility
  */
 export function generateDmFollowup(gistUrl: string): string {
-  const lines: string[] = [];
-
-  lines.push(`Here's the full report with copy-paste fixes:`);
-  lines.push(gistUrl);
-  lines.push('');
-  lines.push(`There's a prompt at the bottom you can paste into Cursor/Claude to fix everything automatically.`);
-  lines.push('');
-  lines.push(`No pressure - just thought it might help!`);
-
-  return lines.join('\n');
+  return `Here's the full report: ${gistUrl}\n\nYou can paste the fixes straight to your AI agent.`;
 }
 
 /**
@@ -185,15 +183,13 @@ export function generateDmContent(
   result: ScanResult,
   score: SecurityScore,
   gistUrl: string,
-  projectName?: string
+  _projectName?: string
 ): {
-  intro: string;
-  followup: string;
+  message: string;
   tweet: string;
 } {
   return {
-    intro: generateDmIntro(result, score, projectName),
-    followup: generateDmFollowup(gistUrl),
+    message: generateDmMessage(result, score, gistUrl),
     tweet: generateTweetSummary(result, score)
   };
 }
