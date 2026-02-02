@@ -331,11 +331,12 @@ export function generateDmMessage(
 
   // Medium-impact issues get beginner-friendly explanation
   if (mediumImpact.length > 0) {
-    // If we already have high-impact, add brief explanation for medium
+    // If we already have high-impact, still give full "What this means:" format
     if (highImpact.length > 0) {
-      lines.push('');
       for (const item of mediumImpact.slice(0, 2)) {
-        lines.push(`${issueNum}. ${item.explanation.term} - ${item.explanation.bad}`);
+        lines.push('');
+        lines.push(`${issueNum}. ${item.explanation.term}`);
+        lines.push(`What this means: ${item.explanation.bad}`);
         issueNum++;
       }
     } else {
@@ -380,7 +381,7 @@ export function generateDmMessage(
 
   // Link and close (only show real gist URLs, not placeholder)
   if (gistUrl && !gistUrl.includes('gist-url-here')) {
-    lines.push(`Got a detailed report here if you want it: ${gistUrl}`);
+    lines.push(`Got a detailed report on GitHub Gist: ${gistUrl}`);
   } else {
     lines.push(`Happy to share the full details if useful!`);
   }

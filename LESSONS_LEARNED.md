@@ -111,3 +111,54 @@ If you see these, the pattern is probably too generic:
 2. **One main issue** - Lead with the most impactful finding
 3. **Explain the risk** - "What this means: anyone can send emails as you"
 4. **Offer help, don't sell** - We're sharing knowledge, not pitching services
+
+---
+
+## Standard DM Structure
+
+This is the template for all DM messages. Follow this format exactly for consistency across 50-250+ scans.
+
+### Template
+
+```
+Hey! Saw your site in the chat - looks great.
+
+Ran a quick security check (I do this for fun). Found something worth mentioning:
+
+1. [Issue Name]
+What this means: [plain English explanation of the risk]
+
+2. [Issue Name]
+What this means: [plain English explanation of the risk]
+
+Plus some smaller things ([brief list of minor issues]).
+
+Got a detailed report on GitHub Gist: [gist URL]
+
+Let me know if you need anything else!
+```
+
+### Key Rules
+
+1. **Every numbered issue gets "What this means:"** - No exceptions. Don't use dashes or inline explanations.
+2. **Maximum 2-3 numbered issues** - More than that overwhelms people. Bundle extras into "Plus some smaller things"
+3. **High-impact issues first** - DMARC, exposed API keys, missing CSP come before HSTS, Referrer-Policy
+4. **Plain English only** - "anyone can send emails pretending to be you" not "SPF/DKIM validation fails"
+5. **Include gist link** - Always use `--gist` flag so recipients have a detailed report
+
+### Example (Real Output)
+
+```
+1. No DMARC record
+What this means: anyone can send emails pretending to be from your domain. One DNS record fixes this.
+
+2. Missing Content Security Policy
+What this means: if someone injects bad code, visitors' browsers will run it (this is how data gets stolen)
+```
+
+### What NOT to Do
+
+❌ `2. Missing CSP - if someone injects bad code...` (dash instead of "What this means:")
+❌ `2. Missing Content-Security-Policy header` (jargon, no explanation)
+❌ Four numbered issues (overwhelming)
+❌ Closing with assumptions about recipient ("us vibe coders")
