@@ -94,7 +94,12 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
           category: 'Email Security',
           title: 'SPF policy is too permissive (+all)',
           description: 'Your SPF record ends with +all which allows anyone to send email as your domain',
-          fix: 'Change +all to ~all or -all in your SPF record'
+          fix: 'Change +all to ~all or -all in your SPF record',
+          evidence: {
+            query: `DNS TXT lookup for ${domain}`,
+            response: spfRecord,
+            verifyCommand: `nslookup -type=TXT ${domain}`
+          }
         });
       }
     } else {
@@ -105,7 +110,12 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
         category: 'Email Security',
         title: 'No SPF record found',
         description: `Without SPF, anyone can send emails pretending to be from your domain. This is like having no caller ID on your phone.${noEmailNote}`,
-        fix: `Add a TXT record to your DNS: v=spf1 include:_spf.google.com ~all (adjust based on your email provider)`
+        fix: `Add a TXT record to your DNS: v=spf1 include:_spf.google.com ~all (adjust based on your email provider)`,
+        evidence: {
+          query: `DNS TXT lookup for ${domain}`,
+          response: 'No SPF record (v=spf1) found in TXT records',
+          verifyCommand: `nslookup -type=TXT ${domain}`
+        }
       });
     }
   } catch (error) {
@@ -116,7 +126,12 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
       category: 'Email Security',
       title: 'No SPF record found',
       description: `Without SPF, anyone can send emails pretending to be from your domain${noEmailNote}`,
-      fix: 'Add a TXT record to your DNS with your SPF policy'
+      fix: 'Add a TXT record to your DNS with your SPF policy',
+      evidence: {
+        query: `DNS TXT lookup for ${domain}`,
+        response: 'DNS lookup failed or no TXT records exist',
+        verifyCommand: `nslookup -type=TXT ${domain}`
+      }
     });
   }
 
@@ -139,7 +154,12 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
           category: 'Email Security',
           title: 'DMARC policy is set to "none"',
           description: 'DMARC is configured but set to monitoring only. Spoofed emails are not rejected.',
-          fix: 'Consider changing DMARC policy from p=none to p=quarantine or p=reject after monitoring'
+          fix: 'Consider changing DMARC policy from p=none to p=quarantine or p=reject after monitoring',
+          evidence: {
+            query: `DNS TXT lookup for _dmarc.${domain}`,
+            response: dmarcRecord,
+            verifyCommand: `nslookup -type=TXT _dmarc.${domain}`
+          }
         });
       }
     } else {
@@ -150,7 +170,12 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
         category: 'Email Security',
         title: 'No DMARC record found',
         description: `DMARC tells email servers what to do when SPF/DKIM checks fail. Without it, spoofed emails may still be delivered.${noEmailNote}`,
-        fix: `Add a TXT record for _dmarc.${domain}: v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`
+        fix: `Add a TXT record for _dmarc.${domain}: v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`,
+        evidence: {
+          query: `DNS TXT lookup for _dmarc.${domain}`,
+          response: 'No DMARC record (v=DMARC1) found',
+          verifyCommand: `nslookup -type=TXT _dmarc.${domain}`
+        }
       });
     }
   } catch {
@@ -161,7 +186,12 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
       category: 'Email Security',
       title: 'No DMARC record found',
       description: `DMARC tells email servers what to do when SPF/DKIM checks fail. Without it, spoofed emails may still be delivered.${noEmailNote}`,
-      fix: `Add a TXT record for _dmarc.${domain}: v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`
+      fix: `Add a TXT record for _dmarc.${domain}: v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`,
+      evidence: {
+        query: `DNS TXT lookup for _dmarc.${domain}`,
+        response: 'NXDOMAIN - no record exists',
+        verifyCommand: `nslookup -type=TXT _dmarc.${domain}`
+      }
     });
   }
 

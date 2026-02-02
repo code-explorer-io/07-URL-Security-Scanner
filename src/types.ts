@@ -7,6 +7,15 @@ export interface SecurityIssue {
   title: string;
   description: string;
   fix: string;
+  /** Raw evidence proving this issue (DNS response, header value, etc.) */
+  evidence?: {
+    /** What we checked */
+    query: string;
+    /** What we got back (or "No response" / "Not found") */
+    response: string;
+    /** Command user can run to verify themselves */
+    verifyCommand?: string;
+  };
 }
 
 export interface CheckResult {

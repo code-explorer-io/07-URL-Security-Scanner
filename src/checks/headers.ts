@@ -88,7 +88,12 @@ export async function checkSecurityHeaders(headers: Headers): Promise<CheckResul
         category: 'Security Headers',
         title: `Missing ${check.name} header`,
         description: check.description,
-        fix: check.fix
+        fix: check.fix,
+        evidence: {
+          query: `HTTP response header: ${check.header}`,
+          response: 'Header not present in response',
+          verifyCommand: `curl -I https://example.com | grep -i "${check.header}"`
+        }
       });
     } else if (check.validate && !check.validate(value)) {
       issues.push({
@@ -97,7 +102,12 @@ export async function checkSecurityHeaders(headers: Headers): Promise<CheckResul
         category: 'Security Headers',
         title: `Weak ${check.name} configuration`,
         description: `Header present but may not be configured securely: ${value}`,
-        fix: check.fix
+        fix: check.fix,
+        evidence: {
+          query: `HTTP response header: ${check.header}`,
+          response: value,
+          verifyCommand: `curl -I https://example.com | grep -i "${check.header}"`
+        }
       });
     }
   }

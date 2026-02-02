@@ -51,6 +51,9 @@ export async function checkCookies(headers: Headers, isHttps: boolean): Promise<
 
     cookies.push(analysis);
 
+    // Mask the cookie value for evidence (show structure, not data)
+    const maskedCookie = cookie.replace(/=([^;]+)/, '=[VALUE]');
+
     // Check for security issues
     if (isHttps && !analysis.hasSecure) {
       issues.push({
@@ -59,7 +62,12 @@ export async function checkCookies(headers: Headers, isHttps: boolean): Promise<
         category: 'Cookie Security',
         title: `Cookie "${name}" missing Secure flag`,
         description: 'Cookie can be transmitted over unencrypted connections',
-        fix: `Add Secure flag to cookie: Set-Cookie: ${name}=value; Secure; HttpOnly; SameSite=Lax`
+        fix: `Add Secure flag to cookie: Set-Cookie: ${name}=value; Secure; HttpOnly; SameSite=Lax`,
+        evidence: {
+          query: `Set-Cookie header for "${name}"`,
+          response: maskedCookie,
+          verifyCommand: `curl -I https://example.com | grep -i "set-cookie"`
+        }
       });
     }
 
@@ -72,7 +80,12 @@ export async function checkCookies(headers: Headers, isHttps: boolean): Promise<
         category: 'Cookie Security',
         title: `Cookie "${name}" missing HttpOnly flag`,
         description: 'Cookie is accessible via JavaScript, making it vulnerable to XSS theft',
-        fix: `Add HttpOnly flag to cookie: Set-Cookie: ${name}=value; HttpOnly; Secure; SameSite=Lax`
+        fix: `Add HttpOnly flag to cookie: Set-Cookie: ${name}=value; HttpOnly; Secure; SameSite=Lax`,
+        evidence: {
+          query: `Set-Cookie header for "${name}"`,
+          response: maskedCookie,
+          verifyCommand: `curl -I https://example.com | grep -i "set-cookie"`
+        }
       });
     }
 
@@ -83,7 +96,12 @@ export async function checkCookies(headers: Headers, isHttps: boolean): Promise<
         category: 'Cookie Security',
         title: `Cookie "${name}" missing SameSite attribute`,
         description: 'Cookie may be sent with cross-site requests, enabling CSRF attacks',
-        fix: `Add SameSite attribute: Set-Cookie: ${name}=value; SameSite=Lax; Secure; HttpOnly`
+        fix: `Add SameSite attribute: Set-Cookie: ${name}=value; SameSite=Lax; Secure; HttpOnly`,
+        evidence: {
+          query: `Set-Cookie header for "${name}"`,
+          response: maskedCookie,
+          verifyCommand: `curl -I https://example.com | grep -i "set-cookie"`
+        }
       });
     } else if (analysis.sameSiteValue === 'none' && !analysis.hasSecure) {
       issues.push({
@@ -92,7 +110,12 @@ export async function checkCookies(headers: Headers, isHttps: boolean): Promise<
         category: 'Cookie Security',
         title: `Cookie "${name}" has SameSite=None without Secure`,
         description: 'SameSite=None requires the Secure flag to work properly',
-        fix: `Add Secure flag when using SameSite=None: Set-Cookie: ${name}=value; SameSite=None; Secure`
+        fix: `Add Secure flag when using SameSite=None: Set-Cookie: ${name}=value; SameSite=None; Secure`,
+        evidence: {
+          query: `Set-Cookie header for "${name}"`,
+          response: maskedCookie,
+          verifyCommand: `curl -I https://example.com | grep -i "set-cookie"`
+        }
       });
     }
   }

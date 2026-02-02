@@ -29,6 +29,13 @@
 - [x] **Subdomain takeover detection** - Uses crt.sh subdomains to check for dangling CNAMEs to 18+ cloud services
 - [x] **Re-scan comparison** - "Last scan: Grade D → This scan: Grade C - improved!" with issues fixed/added
 
+### Quality & Trust (v2.5 - in progress)
+- [x] **Removed Postmark false positive** - Generic UUID pattern matched webpack debug IDs
+- [x] **LESSONS_LEARNED.md** - Document false positives to prevent repeats
+- [x] **ISSUES_FOUND.md** - Track scans and patterns over time
+- [x] **Improved DM wording** - No jargon (removed "SPF" reference)
+- [ ] **Evidence-based reporting** - Every claim includes proof (DNS response, header values, etc.)
+
 ---
 
 ## Future Ideas

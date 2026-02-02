@@ -353,6 +353,19 @@ export function generateAgentReport(combined: CombinedScanResult): string {
       lines.push(`- **Category:** ${issue.category}`);
       lines.push(`- **Description:** ${issue.description}`);
       lines.push(`- **Fix:** ${issue.fix}`);
+
+      // Add evidence if available
+      if (issue.evidence) {
+        lines.push('');
+        lines.push('**Evidence:**');
+        lines.push('```');
+        lines.push(`Query: ${issue.evidence.query}`);
+        lines.push(`Response: ${issue.evidence.response}`);
+        lines.push('```');
+        if (issue.evidence.verifyCommand) {
+          lines.push(`*Verify yourself:* \`${issue.evidence.verifyCommand}\``);
+        }
+      }
       lines.push('');
     }
   }
