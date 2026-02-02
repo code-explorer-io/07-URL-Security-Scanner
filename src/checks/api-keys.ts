@@ -399,7 +399,14 @@ export async function checkApiKeys(url: string, timeout: number = 10000): Promis
         category: 'Exposed Secrets',
         title: `${key.pattern.name} exposed: ${key.masked}`,
         description: key.pattern.description,
-        fix: key.pattern.fix
+        fix: key.pattern.fix,
+        evidence: {
+          query: `JavaScript scan at ${key.location}`,
+          response: `Found: ${key.masked} (pattern: ${key.pattern.name}, confidence: ${key.pattern.confidence})`,
+          verifyCommand: key.location.startsWith('http')
+            ? `curl -s "${key.location}" | grep -o "${key.match.substring(0, 8)}[^\"']*"`
+            : `View page source and search for "${key.masked.substring(0, 8)}"`
+        }
       });
     }
 
@@ -553,13 +560,19 @@ export async function checkClientSidePermissions(url: string, htmlContent?: stri
     // If we found concerning patterns, add a warning
     if (allMatches.length > 0) {
       const patternNames = [...new Set(allMatches.map(m => m.name))].slice(0, 5);
+      const exampleMatch = allMatches[0];
       issues.push({
         id: 'clientside-permission-check',
         severity: 'medium',
         category: 'Code Review',
         title: `Possible client-side permission checks found`,
         description: `Found patterns like "${patternNames.join('", "')}" in JavaScript. If these control access to paid features or admin functions, make sure they're ALSO enforced on your server. Client-side checks can be bypassed via browser DevTools.`,
-        fix: 'Ensure all permission checks happen on your backend API, not just in frontend JavaScript. The server should verify permissions before returning sensitive data or allowing actions.'
+        fix: 'Ensure all permission checks happen on your backend API, not just in frontend JavaScript. The server should verify permissions before returning sensitive data or allowing actions.',
+        evidence: {
+          query: `JavaScript scan for permission patterns at ${exampleMatch.location}`,
+          response: `Found "${exampleMatch.name}" in context: ...${exampleMatch.context}...`,
+          verifyCommand: `Open browser DevTools, search JavaScript for "${patternNames[0]}"`
+        }
       });
     }
 

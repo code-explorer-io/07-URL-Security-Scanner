@@ -54,6 +54,19 @@ PHASE 2: External Validation
 
 External tools add credibility - if Observatory also flags headers, our finding is more trustworthy.
 
+## Core Principle: Evidence-Based Reporting
+
+**Every claim must be provable.** When cold-DMing someone, credibility is everything.
+
+Each issue in the report includes:
+- **Query:** What we checked
+- **Response:** What we found (the proof)
+- **Verify command:** How they can check themselves
+
+If the scanner detects issues without evidence, it warns you before sending. Never DM a claim you can't back up.
+
+See `LESSONS_LEARNED.md` for full implementation details.
+
 ## Understanding the Results
 
 **Severity levels:**
@@ -97,14 +110,15 @@ Keep it casual. One main issue. Explain the actual risk in plain English.
 
 ## Project Status
 
-- **Version:** 2.2
-- **Scans completed:** 2
-- **Next priority:** Landing page for legitimacy
+- **Version:** 2.5 (Evidence-based reporting)
+- **Scans completed:** 5+
+- **Key docs:** `LESSONS_LEARNED.md`, `V3_IDEAS.md`
 
 ## File Structure
 
 ```
 CLAUDE.md          <- You are here (read first)
+LESSONS_LEARNED.md <- Quality rules and past mistakes
 V3_IDEAS.md        <- Roadmap and backlog
 src/               <- Source code
 outputs/           <- Generated reports (per scan)

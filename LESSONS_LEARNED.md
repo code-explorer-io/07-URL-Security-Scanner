@@ -162,3 +162,91 @@ What this means: if someone injects bad code, visitors' browsers will run it (th
 ❌ `2. Missing Content-Security-Policy header` (jargon, no explanation)
 ❌ Four numbered issues (overwhelming)
 ❌ Closing with assumptions about recipient ("us vibe coders")
+
+---
+
+## Code Bugs Fixed
+
+### 1. Missing "What this means:" on additional issues (2026-02-02)
+
+**What happened:** The DM generator only added "What this means:" to the FIRST issue. Additional numbered issues were missing the explanation.
+
+**The bug locations:**
+- `dm.ts` lines 325-329: Additional high-impact issues only had the title
+- `dm.ts` lines 350-354: Additional medium-impact issues only had the term
+
+**The fix:** Added `What this means:` line for ALL numbered issues, not just the first one.
+
+**Lesson:** The rule "Every numbered issue gets 'What this means:'" must be enforced in ALL code paths, not just the first issue.
+
+---
+
+## Evidence-Based Approach (v2.5)
+
+### The Principle
+
+**Every claim must be provable.** When cold-DMing someone about security issues, credibility is everything. If they check your claim and can't verify it, trust is broken.
+
+### Implementation
+
+Every `SecurityIssue` must include an `evidence` field with:
+
+```typescript
+evidence: {
+  query: string;      // What we checked
+  response: string;   // What we found (or didn't find)
+  verifyCommand?: string;  // Command they can run to verify
+}
+```
+
+### Example
+
+```typescript
+issues.push({
+  id: 'cors-wildcard',
+  severity: 'medium',
+  title: 'CORS allows any origin',
+  description: '...',
+  fix: '...',
+  evidence: {
+    query: 'HTTP response headers from https://example.com',
+    response: 'Access-Control-Allow-Origin: *',
+    verifyCommand: 'curl -I https://example.com | grep -i "access-control"'
+  }
+});
+```
+
+### Validation
+
+The scanner now validates evidence before generating reports. If any issue lacks evidence, a warning is displayed:
+
+```
+⚠️  EVIDENCE WARNING: Some issues lack supporting evidence
+   9 issues have evidence, 2 do not
+
+   Missing evidence for:
+   - [MEDIUM] Some issue without proof
+```
+
+### Why This Matters
+
+1. **Inconsistent scan results** - SSL check returned different results 2 minutes apart. Without evidence (actual cert dates), we couldn't tell if it was a bug or network variability.
+
+2. **Cold outreach credibility** - When DMing strangers, you need to be right. One wrong claim damages reputation.
+
+3. **Verifiability** - Recipients can run the verify command and see the same thing we saw.
+
+### Checks with Evidence
+
+All checks now include evidence:
+- ✅ SSL/TLS - cert dates, issuer, verify command
+- ✅ CORS - actual header values received
+- ✅ Headers - header name and value (or "not present")
+- ✅ DNS/Email - DNS query and response
+- ✅ API Keys - file location, masked key pattern
+- ✅ Cookies - cookie name and attributes
+- ✅ Server Info - header name and value
+- ✅ Exposed Files - status code, content type
+- ✅ Admin Paths - status code, validation result
+- ✅ Robots.txt - disallowed paths found
+- ✅ Subdomain Takeover - CNAME records, fingerprints

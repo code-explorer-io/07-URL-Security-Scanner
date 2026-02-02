@@ -10,6 +10,45 @@ import { ScanResult, SecurityIssue } from '../types';
 import { SecurityScore } from './score';
 import { ExternalScanResult } from '../integrations/external-scanners';
 
+/**
+ * Evidence validation - ensures every claim can be backed up
+ * This is critical for credibility when cold-DMing someone
+ */
+export interface EvidenceValidationResult {
+  valid: boolean;
+  issuesWithEvidence: number;
+  issuesWithoutEvidence: number;
+  missingEvidence: Array<{
+    title: string;
+    category: string;
+    severity: string;
+  }>;
+}
+
+export function validateEvidence(issues: SecurityIssue[]): EvidenceValidationResult {
+  const withEvidence: SecurityIssue[] = [];
+  const withoutEvidence: SecurityIssue[] = [];
+
+  for (const issue of issues) {
+    if (issue.evidence && issue.evidence.query && issue.evidence.response) {
+      withEvidence.push(issue);
+    } else {
+      withoutEvidence.push(issue);
+    }
+  }
+
+  return {
+    valid: withoutEvidence.length === 0,
+    issuesWithEvidence: withEvidence.length,
+    issuesWithoutEvidence: withoutEvidence.length,
+    missingEvidence: withoutEvidence.map(i => ({
+      title: i.title,
+      category: i.category,
+      severity: i.severity
+    }))
+  };
+}
+
 // Simplified Nuclei finding type for report generation
 export interface NucleiFinding {
   templateId: string;

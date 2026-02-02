@@ -50,7 +50,12 @@ export async function checkServerInfo(headers: Headers): Promise<CheckResult> {
       category: 'Information Disclosure',
       title: 'X-Powered-By header exposes technology stack',
       description: `Server reveals: ${poweredBy}. This helps attackers target known vulnerabilities.`,
-      fix: 'Remove X-Powered-By header. In PHP: Header("X-Powered-By: "); In Express: app.disable("x-powered-by")'
+      fix: 'Remove X-Powered-By header. In PHP: Header("X-Powered-By: "); In Express: app.disable("x-powered-by")',
+      evidence: {
+        query: 'HTTP response header: x-powered-by',
+        response: `X-Powered-By: ${poweredBy}`,
+        verifyCommand: 'curl -I <url> | grep -i "x-powered-by"'
+      }
     });
   }
 
@@ -66,7 +71,12 @@ export async function checkServerInfo(headers: Headers): Promise<CheckResult> {
         category: 'Information Disclosure',
         title: 'Server header exposes version information',
         description: `Server header reveals: ${server}. Version info helps attackers find known vulnerabilities.`,
-        fix: 'Configure your web server to hide version info. Apache: ServerTokens Prod. Nginx: server_tokens off;'
+        fix: 'Configure your web server to hide version info. Apache: ServerTokens Prod. Nginx: server_tokens off;',
+        evidence: {
+          query: 'HTTP response header: server',
+          response: `Server: ${server}`,
+          verifyCommand: 'curl -I <url> | grep -i "^server:"'
+        }
       });
     } else if (server.toLowerCase() !== 'cloudflare' &&
                server.toLowerCase() !== 'nginx' &&
@@ -80,7 +90,12 @@ export async function checkServerInfo(headers: Headers): Promise<CheckResult> {
         category: 'Information Disclosure',
         title: 'Server header present',
         description: `Server: ${server}. Consider hiding server type.`,
-        fix: 'Configure your web server to hide or minimize the Server header'
+        fix: 'Configure your web server to hide or minimize the Server header',
+        evidence: {
+          query: 'HTTP response header: server',
+          response: `Server: ${server}`,
+          verifyCommand: 'curl -I <url> | grep -i "^server:"'
+        }
       });
     }
   }
@@ -94,7 +109,12 @@ export async function checkServerInfo(headers: Headers): Promise<CheckResult> {
       category: 'Information Disclosure',
       title: 'X-AspNet-Version header exposes framework version',
       description: `ASP.NET version ${aspNetVersion} is exposed`,
-      fix: 'In web.config, add: <httpRuntime enableVersionHeader="false" />'
+      fix: 'In web.config, add: <httpRuntime enableVersionHeader="false" />',
+      evidence: {
+        query: 'HTTP response header: x-aspnet-version',
+        response: `X-AspNet-Version: ${aspNetVersion}`,
+        verifyCommand: 'curl -I <url> | grep -i "x-aspnet-version"'
+      }
     });
   }
 
@@ -106,7 +126,12 @@ export async function checkServerInfo(headers: Headers): Promise<CheckResult> {
       category: 'Information Disclosure',
       title: 'X-AspNetMvc-Version header exposes MVC version',
       description: `ASP.NET MVC version ${aspNetMvcVersion} is exposed`,
-      fix: 'In Application_Start, add: MvcHandler.DisableMvcResponseHeader = true;'
+      fix: 'In Application_Start, add: MvcHandler.DisableMvcResponseHeader = true;',
+      evidence: {
+        query: 'HTTP response header: x-aspnetmvc-version',
+        response: `X-AspNetMvc-Version: ${aspNetMvcVersion}`,
+        verifyCommand: 'curl -I <url> | grep -i "x-aspnetmvc-version"'
+      }
     });
   }
 
@@ -127,7 +152,12 @@ export async function checkServerInfo(headers: Headers): Promise<CheckResult> {
       category: 'Information Disclosure',
       title: 'X-Generator header reveals CMS/platform',
       description: `Generator: ${generator}`,
-      fix: 'Remove the X-Generator header from your responses'
+      fix: 'Remove the X-Generator header from your responses',
+      evidence: {
+        query: 'HTTP response header: x-generator',
+        response: `X-Generator: ${generator}`,
+        verifyCommand: 'curl -I <url> | grep -i "x-generator"'
+      }
     });
   }
 

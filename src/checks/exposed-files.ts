@@ -432,7 +432,12 @@ export async function checkExposedFiles(baseUrl: string, timeout: number = 5000)
           category: 'Exposed Files',
           title: `${result.file.name} accessible: ${result.file.path}`,
           description: result.file.description,
-          fix: result.file.fix
+          fix: result.file.fix,
+          evidence: {
+            query: `HTTP GET ${result.file.path}`,
+            response: `Status: ${result.status}, Content-Type: ${result.contentType || 'unknown'}, Content validated as genuine (not SPA fallback)`,
+            verifyCommand: `curl -I <url>${result.file.path}`
+          }
         });
       }
     }

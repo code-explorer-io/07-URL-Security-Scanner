@@ -554,7 +554,7 @@ async function handleOutreachMode(
   console.log('');
 
   // Import combined report generator
-  const { createCombinedResult, generateCombinedReports } = await import('./report/combined');
+  const { createCombinedResult, generateCombinedReports, validateEvidence } = await import('./report/combined');
 
   // Create combined result
   const combined = createCombinedResult(
@@ -565,6 +565,29 @@ async function handleOutreachMode(
     externalResults.links,
     result.techStack
   );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // EVIDENCE VALIDATION - Every claim must be provable
+  // ═══════════════════════════════════════════════════════════════════
+  const allIssuesForValidation = result.checks.flatMap(c => c.issues);
+  const evidenceCheck = validateEvidence(allIssuesForValidation);
+
+  if (!evidenceCheck.valid) {
+    console.log('');
+    console.log('⚠️  EVIDENCE WARNING: Some issues lack supporting evidence');
+    console.log(`   ${evidenceCheck.issuesWithEvidence} issues have evidence, ${evidenceCheck.issuesWithoutEvidence} do not`);
+    console.log('');
+    console.log('   Missing evidence for:');
+    for (const missing of evidenceCheck.missingEvidence.slice(0, 5)) {
+      console.log(`   - [${missing.severity.toUpperCase()}] ${missing.title}`);
+    }
+    if (evidenceCheck.missingEvidence.length > 5) {
+      console.log(`   ... and ${evidenceCheck.missingEvidence.length - 5} more`);
+    }
+    console.log('');
+    console.log('   ⚠️  Claims without evidence may damage credibility. Review before sending.');
+    console.log('');
+  }
 
   // Generate both reports
   const reports = generateCombinedReports(combined, projectName);

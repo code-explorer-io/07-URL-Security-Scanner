@@ -273,7 +273,12 @@ export async function checkAdminPaths(
           category: 'Admin Paths',
           title: `${result.adminPath.name} found: ${result.adminPath.path}`,
           description: result.adminPath.description,
-          fix
+          fix,
+          evidence: {
+            query: `HTTP GET ${result.adminPath.path}`,
+            response: `Status: ${result.status}, Content validated as admin panel (not SPA fallback)`,
+            verifyCommand: `curl -I <url>${result.adminPath.path}`
+          }
         });
       }
     }

@@ -325,6 +325,7 @@ export function generateDmMessage(
     for (const item of highImpact.slice(1, 3)) {
       lines.push('');
       lines.push(`${issueNum}. ${item.explanation.short}`);
+      lines.push(`What this means: ${item.explanation.risk}`);
       issueNum++;
     }
   }
@@ -346,10 +347,11 @@ export function generateDmMessage(
       lines.push(`What this means: ${main.explanation.means}. ${main.explanation.bad}.`);
       issueNum++;
 
-      // Additional medium-impact issues (brief)
+      // Additional medium-impact issues - all get "What this means:"
       for (const item of mediumImpact.slice(1, 3)) {
         lines.push('');
         lines.push(`${issueNum}. ${item.explanation.term}`);
+        lines.push(`What this means: ${item.explanation.means}. ${item.explanation.bad}.`);
         issueNum++;
       }
 

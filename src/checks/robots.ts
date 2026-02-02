@@ -113,7 +113,12 @@ export async function checkRobots(baseUrl: string, timeout: number = 5000): Prom
           category: 'Information Disclosure',
           title: 'robots.txt reveals potentially sensitive paths',
           description: `Found ${details.sensitivePathsFound.length} potentially sensitive paths: ${details.sensitivePathsFound.slice(0, 5).join(', ')}${details.sensitivePathsFound.length > 5 ? '...' : ''}`,
-          fix: 'While hiding paths in robots.txt is not a security measure, be aware that this reveals your directory structure to attackers. Ensure these paths are properly secured.'
+          fix: 'While hiding paths in robots.txt is not a security measure, be aware that this reveals your directory structure to attackers. Ensure these paths are properly secured.',
+          evidence: {
+            query: 'HTTP GET /robots.txt',
+            response: `Disallowed paths found: ${details.sensitivePathsFound.slice(0, 3).join(', ')}${details.sensitivePathsFound.length > 3 ? '...' : ''}`,
+            verifyCommand: 'curl <url>/robots.txt'
+          }
         });
       }
 
@@ -125,7 +130,12 @@ export async function checkRobots(baseUrl: string, timeout: number = 5000): Prom
           category: 'Information Disclosure',
           title: 'robots.txt blocks all crawlers',
           description: 'The site blocks all search engine crawlers. This may affect SEO.',
-          fix: 'If this is intentional, no action needed. Otherwise, update robots.txt to allow search engines.'
+          fix: 'If this is intentional, no action needed. Otherwise, update robots.txt to allow search engines.',
+          evidence: {
+            query: 'HTTP GET /robots.txt',
+            response: 'Contains "Disallow: /" - blocking all crawlers',
+            verifyCommand: 'curl <url>/robots.txt'
+          }
         });
       }
     }
