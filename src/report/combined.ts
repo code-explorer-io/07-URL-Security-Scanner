@@ -42,6 +42,10 @@ export interface CombinedScanResult {
       findings: NucleiFinding[];
       duration?: number;
     };
+    crtsh?: ExternalScanResult;
+    urlscan?: ExternalScanResult;
+    pagespeed?: ExternalScanResult;
+    sslLabs?: ExternalScanResult;
     links: { name: string; url: string }[];
   };
   // Combined analysis
@@ -204,6 +208,49 @@ export function generateExecutiveSummary(
     lines.push('');
   }
 
+  if (external.urlscan) {
+    const urlscanDetails = external.urlscan.details as { malicious?: boolean };
+    if (urlscanDetails.malicious) {
+      lines.push('**URLScan.io:** ⚠️ Site flagged as potentially malicious');
+    } else {
+      lines.push('**URLScan.io:** No malicious indicators found');
+    }
+    lines.push('');
+  }
+
+  if (external.crtsh) {
+    const crtDetails = external.crtsh.details as { totalSubdomains?: number };
+    lines.push(`**Certificate Transparency:** ${crtDetails.totalSubdomains || 0} subdomains found`);
+    lines.push('');
+  }
+
+  if (external.pagespeed) {
+    const psDetails = external.pagespeed.details as { bestPracticesScore?: number; vulnerableLibraries?: boolean };
+    let psStatus = `Best Practices Score: ${psDetails.bestPracticesScore || 0}/100`;
+    if (psDetails.vulnerableLibraries) {
+      psStatus += ' (⚠️ vulnerable JS libraries detected)';
+    }
+    lines.push(`**Google PageSpeed:** ${psStatus}`);
+    lines.push('');
+  }
+
+  if (external.sslLabs) {
+    const sslGrade = external.sslLabs.grade || 'N/A';
+    const sslDetails = external.sslLabs.details as { hasWarnings?: boolean; status?: string };
+    let sslStatus = `Grade ${sslGrade}`;
+    if (sslDetails.hasWarnings) {
+      sslStatus += ' (has warnings)';
+    }
+    if (sslDetails.status && sslDetails.status !== 'READY') {
+      sslStatus = sslDetails.status === 'IN_PROGRESS' ? 'Scan in progress' : 'Check link for results';
+    }
+    lines.push(`**SSL Labs:** ${sslStatus}`);
+    if (external.sslLabs.url) {
+      lines.push(`[View TLS details](${external.sslLabs.url})`);
+    }
+    lines.push('');
+  }
+
   // Confidence
   lines.push(`**Confidence Level:** ${analysis.confidence.toUpperCase()}`);
   lines.push('');
@@ -226,12 +273,40 @@ export function generateExecutiveSummary(
     lines.push('');
   }
 
+  // What We Checked vs Didn't Check
+  lines.push('## What This Scan Covers');
+  lines.push('');
+  lines.push('**Checked:**');
+  lines.push('- Security headers (CSP, HSTS, X-Frame-Options, etc.)');
+  lines.push('- SSL/TLS configuration');
+  lines.push('- Exposed API keys in JavaScript');
+  lines.push('- Email security (SPF/DMARC)');
+  lines.push('- Exposed sensitive files (.env, .git, etc.)');
+  lines.push('- CORS configuration');
+  lines.push('- Cookie security');
+  lines.push('');
+  lines.push('**Partially Checked (may need manual review):**');
+  lines.push('- Client-side permission patterns (we scan for `isPro`, `isAdmin`, etc. but can\'t verify server enforcement)');
+  lines.push('');
+  lines.push('**⚠️ Not Checked (often MORE important than headers):**');
+  lines.push('');
+  lines.push('We can only scan what\'s visible from your URL. These common vulnerabilities require code access:');
+  lines.push('');
+  lines.push('- **Rate limiting** - Can someone brute-force your login? (Add: express-rate-limit, Cloudflare rules)');
+  lines.push('- **Input sanitization** - Do you clean user input before displaying it? (Prevents XSS)');
+  lines.push('- **SQL injection** - Are your database queries parameterized?');
+  lines.push('- **Auth/session security** - Are tokens stored securely? Do sessions expire?');
+  lines.push('');
+  lines.push('> 💡 **Tip:** If you have user logins or forms, the "Not Checked" items above are probably more important than missing headers. Ask your AI agent to audit these in your codebase.');
+  lines.push('');
+
   // Next Steps
   lines.push('## What To Do Next');
   lines.push('');
   lines.push('1. Share the **Technical Report** (below) with your AI coding assistant');
   lines.push('2. Ask it to implement the fixes');
-  lines.push('3. Re-scan after deploying to verify the fixes worked');
+  lines.push('3. Ask it to audit the "Not Checked" items above');
+  lines.push('4. Re-scan after deploying to verify the fixes worked');
   lines.push('');
   lines.push('---');
   lines.push('');
@@ -327,6 +402,121 @@ export function generateAgentReport(combined: CombinedScanResult): string {
     lines.push('');
   }
 
+  // URLScan.io
+  if (external.urlscan) {
+    lines.push('### URLScan.io');
+    lines.push('');
+    const urlscanDetails = external.urlscan.details as {
+      malicious?: boolean;
+      lastScanned?: string;
+      scanCount?: number;
+      latestResultUrl?: string;
+    };
+    if (urlscanDetails.malicious) {
+      lines.push('⚠️ **WARNING: Site flagged as potentially malicious!**');
+    } else {
+      lines.push('✅ No malicious indicators found.');
+    }
+    if (urlscanDetails.lastScanned) {
+      lines.push(`- **Last Scanned:** ${urlscanDetails.lastScanned}`);
+    }
+    if (urlscanDetails.latestResultUrl) {
+      lines.push(`- **Latest Scan:** ${urlscanDetails.latestResultUrl}`);
+    }
+    lines.push('');
+  }
+
+  // Certificate Transparency (crt.sh)
+  if (external.crtsh) {
+    lines.push('### Certificate Transparency (crt.sh)');
+    lines.push('');
+    const crtDetails = external.crtsh.details as {
+      certificatesFound?: number;
+      totalSubdomains?: number;
+      uniqueSubdomains?: string[];
+      wildcardCerts?: string[];
+    };
+    lines.push(`- **Certificates Found:** ${crtDetails.certificatesFound || 0}`);
+    lines.push(`- **Unique Subdomains:** ${crtDetails.totalSubdomains || 0}`);
+    if (crtDetails.uniqueSubdomains && crtDetails.uniqueSubdomains.length > 0) {
+      lines.push('- **Subdomains:**');
+      for (const subdomain of crtDetails.uniqueSubdomains.slice(0, 10)) {
+        lines.push(`  - ${subdomain}`);
+      }
+      if ((crtDetails.totalSubdomains || 0) > 10) {
+        lines.push(`  - ... and ${(crtDetails.totalSubdomains || 0) - 10} more`);
+      }
+    }
+    if (crtDetails.wildcardCerts && crtDetails.wildcardCerts.length > 0) {
+      lines.push(`- **Wildcard Certificates:** ${crtDetails.wildcardCerts.join(', ')}`);
+    }
+    if (external.crtsh.url) {
+      lines.push(`- **Full Report:** ${external.crtsh.url}`);
+    }
+    lines.push('');
+  }
+
+  // Google PageSpeed
+  if (external.pagespeed) {
+    lines.push('### Google PageSpeed Best Practices');
+    lines.push('');
+    const psDetails = external.pagespeed.details as {
+      bestPracticesScore?: number;
+      httpsEnabled?: boolean;
+      http2Enabled?: boolean;
+      vulnerableLibraries?: boolean;
+      securityIssues?: string[];
+    };
+    lines.push(`- **Best Practices Score:** ${psDetails.bestPracticesScore || 0}/100`);
+    lines.push(`- **HTTPS Enabled:** ${psDetails.httpsEnabled ? 'Yes' : 'No'}`);
+    lines.push(`- **HTTP/2 Enabled:** ${psDetails.http2Enabled ? 'Yes' : 'No'}`);
+    if (psDetails.vulnerableLibraries) {
+      lines.push('- **⚠️ Vulnerable JavaScript Libraries Detected**');
+    }
+    if (psDetails.securityIssues && psDetails.securityIssues.length > 0) {
+      lines.push('- **Security Issues:**');
+      for (const issue of psDetails.securityIssues) {
+        lines.push(`  - ${issue}`);
+      }
+    }
+    if (external.pagespeed.url) {
+      lines.push(`- **Full Report:** ${external.pagespeed.url}`);
+    }
+    lines.push('');
+  }
+
+  // SSL Labs
+  if (external.sslLabs) {
+    lines.push('### SSL Labs TLS Analysis');
+    lines.push('');
+    const sslDetails = external.sslLabs.details as {
+      grade?: string;
+      endpoints?: number;
+      hasWarnings?: boolean;
+      grades?: string;
+      status?: string;
+      message?: string;
+    };
+    if (external.sslLabs.grade) {
+      lines.push(`- **TLS Grade:** ${external.sslLabs.grade}`);
+      if (sslDetails.endpoints) {
+        lines.push(`- **Endpoints Tested:** ${sslDetails.endpoints}`);
+      }
+      if (sslDetails.hasWarnings) {
+        lines.push('- **⚠️ Has Configuration Warnings**');
+      }
+      if (sslDetails.grades && sslDetails.grades !== external.sslLabs.grade) {
+        lines.push(`- **All Grades:** ${sslDetails.grades}`);
+      }
+    } else {
+      lines.push(`- **Status:** ${sslDetails.message || 'Check link for results'}`);
+    }
+    if (external.sslLabs.url) {
+      lines.push(`- **Full Report:** ${external.sslLabs.url}`);
+    }
+    lines.push('');
+  }
+
   // Manual Check Links
   if (external.links.length > 0) {
     lines.push('### Additional Manual Checks');
@@ -387,6 +577,21 @@ export function generateAgentReport(combined: CombinedScanResult): string {
   lines.push('4. **LOW** - Nice to have (hardening)');
   lines.push('');
 
+  // Not Checked Section - important for AI agents
+  lines.push('---');
+  lines.push('## Not Checked (Manual Review Needed)');
+  lines.push('');
+  lines.push('This scanner cannot test the following. Consider reviewing manually:');
+  lines.push('');
+  lines.push('- **Rate Limiting** - Does your login/API have limits to prevent brute force attacks?');
+  lines.push('- **Input Sanitization** - Are user inputs cleaned before display? (prevents XSS attacks)');
+  lines.push('- **Business Logic on Backend** - Are sensitive operations (auth, payments, validation) on the server, not in client-side JS?');
+  lines.push('- **SQL Injection** - If you use a database, are queries parameterized?');
+  lines.push('- **Authentication Flow** - Are sessions/tokens handled securely?');
+  lines.push('');
+  lines.push('> Tip: Ask your AI agent to audit these areas in your codebase.');
+  lines.push('');
+
   // Summary for AI
   lines.push('---');
   lines.push('## AI Agent Instructions');
@@ -432,6 +637,10 @@ export function createCombinedResult(
   techStack?: CombinedScanResult['internal']['techStack']
 ): CombinedScanResult {
   const observatory = externalResults.find(r => r.source === 'Mozilla Observatory');
+  const crtsh = externalResults.find(r => r.source === 'Certificate Transparency (crt.sh)');
+  const urlscan = externalResults.find(r => r.source === 'URLScan.io');
+  const pagespeed = externalResults.find(r => r.source === 'Google PageSpeed');
+  const sslLabs = externalResults.find(r => r.source === 'SSL Labs');
   const allIssues = internalResult.checks.flatMap(c => c.issues);
 
   return {
@@ -446,6 +655,10 @@ export function createCombinedResult(
         findings: nucleiFindings,
         duration: undefined
       } : undefined,
+      crtsh,
+      urlscan,
+      pagespeed,
+      sslLabs,
       links
     },
     analysis: analyzeAgreement(allIssues, observatory?.grade, nucleiFindings)

@@ -66,17 +66,53 @@ const HIGH_IMPACT_EXPLANATIONS: Record<string, { short: string; risk: string }> 
 };
 
 /**
- * Lower-priority issues - still mention but don't emphasize
+ * Medium-priority issues - explain like talking to a friend who doesn't code
+ * Format: { name: simple name, why: plain English consequence }
+ */
+/**
+ * Medium-priority issues - structured for clarity:
+ * - term: the technical name (what devs call it)
+ * - means: plain English explanation
+ * - bad: why this actually matters (the consequence)
+ */
+const MEDIUM_IMPACT_EXPLANATIONS: Record<string, { term: string; means: string; bad: string }> = {
+  'CORS': {
+    term: 'CORS allows any origin',
+    means: 'any website can request data from your site and your site will respond',
+    bad: 'if you store user info, other sites could read it'
+  },
+  'Content-Security-Policy': {
+    term: 'Missing Content Security Policy',
+    means: 'your site doesn\'t tell browsers which scripts are allowed to run',
+    bad: 'if someone injects bad code, visitors\' browsers will run it (this is how data gets stolen)'
+  },
+  'X-Frame-Options': {
+    term: 'Missing X-Frame-Options',
+    means: 'your site can be embedded inside other websites',
+    bad: 'scammers put your site in a fake page and trick people into clicking things (called clickjacking)'
+  },
+  'X-Content-Type-Options': {
+    term: 'Missing X-Content-Type-Options',
+    means: 'browsers guess what type files are instead of being told',
+    bad: 'can cause weird security issues (easy one-liner fix though)'
+  },
+  'Strict-Transport-Security': {
+    term: 'HTTPS not enforced',
+    means: 'browsers can still visit the http:// version of your site',
+    bad: 'someone on the same WiFi could see everything your visitors type (passwords, etc)'
+  },
+};
+
+/**
+ * Lower-priority issues - just name them simply
  */
 const MINOR_ISSUE_NAMES: Record<string, string> = {
-  'Content-Security-Policy': 'CSP header (blocks malicious scripts)',
-  'X-Frame-Options': 'clickjacking protection',
-  'X-Content-Type-Options': 'MIME sniffing protection',
-  'Strict-Transport-Security': 'HTTPS enforcement',
   'Referrer-Policy': 'privacy setting',
   'Permissions-Policy': 'browser permissions',
+  'X-XSS-Protection': 'legacy browser protection',
+  'X-Powered-By': 'server info visible (tells hackers what software you use)',
   'Git config': 'git config exposed',
-  'Source map': 'source maps visible',
+  'Source map': 'source code visible',
 };
 
 /**
@@ -95,9 +131,26 @@ function getHighImpactExplanation(issue: SecurityIssue, domain: string): { short
 }
 
 /**
+ * Get medium-impact explanation (with "why it matters")
+ */
+function getMediumImpactExplanation(issue: SecurityIssue): { term: string; means: string; bad: string } | null {
+  for (const [key, explanation] of Object.entries(MEDIUM_IMPACT_EXPLANATIONS)) {
+    if (issue.title.includes(key) || issue.description.includes(key) || issue.category.includes(key)) {
+      return explanation;
+    }
+  }
+  return null;
+}
+
+/**
  * Get a short name for minor issues
  */
 function getMinorIssueName(issue: SecurityIssue): string {
+  // First check medium-impact (return just the term part)
+  const medium = getMediumImpactExplanation(issue);
+  if (medium) return medium.term;
+
+  // Then check minor issues
   for (const [key, name] of Object.entries(MINOR_ISSUE_NAMES)) {
     if (issue.title.includes(key) || issue.description.includes(key)) {
       return name;
@@ -158,8 +211,9 @@ export function generateDmMessage(
   );
   const lowIssues = prioritized.filter(i => i.severity === 'low');
 
-  // Separate high-impact issues from minor ones (for significant issues)
+  // Separate issues into tiers: high-impact, medium-impact, minor
   const highImpact: { issue: SecurityIssue; explanation: { short: string; risk: string } }[] = [];
+  const mediumImpact: { issue: SecurityIssue; explanation: { term: string; means: string; bad: string } }[] = [];
   const minor: SecurityIssue[] = [];
   const seenCategories = new Set<string>();
 
@@ -167,12 +221,19 @@ export function generateDmMessage(
     if (seenCategories.has(issue.category)) continue;
     seenCategories.add(issue.category);
 
-    const explanation = getHighImpactExplanation(issue, domain);
-    if (explanation) {
-      highImpact.push({ issue, explanation });
-    } else {
-      minor.push(issue);
+    const highExplanation = getHighImpactExplanation(issue, domain);
+    if (highExplanation) {
+      highImpact.push({ issue, explanation: highExplanation });
+      continue;
     }
+
+    const mediumExplanation = getMediumImpactExplanation(issue);
+    if (mediumExplanation) {
+      mediumImpact.push({ issue, explanation: mediumExplanation });
+      continue;
+    }
+
+    minor.push(issue);
   }
 
   const lines: string[] = [];
@@ -182,7 +243,7 @@ export function generateDmMessage(
   lines.push('');
 
   // Handle clean sites (no significant issues)
-  if (highImpact.length === 0 && minor.length === 0) {
+  if (highImpact.length === 0 && mediumImpact.length === 0 && minor.length === 0) {
     // Check if there are only LOW severity issues
     if (lowIssues.length > 0) {
       lines.push(`Ran a quick security check (I do this for fun) - your site is looking solid!`);
@@ -210,23 +271,56 @@ export function generateDmMessage(
   lines.push(`Ran a quick security check (I do this for fun). Found something worth mentioning:`);
   lines.push('');
 
-  // High-impact issues get full explanation
+  // High-impact issues get full explanation with new format
   if (highImpact.length > 0) {
     const main = highImpact[0];
-    lines.push(`${main.explanation.short} - ${main.explanation.risk}`);
+    lines.push(`${main.explanation.short}`);
+    lines.push(`What this means: ${main.explanation.risk}`);
 
     // Additional high-impact issues (if any)
-    for (let i = 1; i < Math.min(highImpact.length, 2); i++) {
+    if (highImpact.length > 1) {
       lines.push('');
-      lines.push(`${highImpact[i].explanation.short} - ${highImpact[i].explanation.risk}`);
+      const others = highImpact.slice(1, 3).map(h => h.explanation.short).join(', ');
+      lines.push(`Also found: ${others}.`);
+    }
+  }
+
+  // Medium-impact issues get beginner-friendly explanation
+  if (mediumImpact.length > 0) {
+    // If we already have high-impact, be brief with medium
+    if (highImpact.length > 0) {
+      lines.push('');
+      const mediumTerms = mediumImpact.slice(0, 2).map(m => m.explanation.term).join(', ');
+      lines.push(`Also found: ${mediumTerms}.`);
+    } else {
+      // Medium is the top priority - give full explanation with new format
+      const main = mediumImpact[0];
+      lines.push(`${main.explanation.term}`);
+      lines.push(`What this means: ${main.explanation.means}. ${main.explanation.bad}.`);
+
+      // Additional medium-impact issues (brief)
+      if (mediumImpact.length > 1) {
+        lines.push('');
+        const others = mediumImpact.slice(1, 3).map(m => m.explanation.term).join(', ');
+        lines.push(`Also found: ${others}.`);
+      }
+
+      // If we ONLY found header issues (no API keys, no exposed files, etc.)
+      // add honest context - headers are the least impactful thing we check
+      const allCategories = new Set(significantIssues.map(i => i.category));
+      const onlyHeaders = allCategories.size === 1 && allCategories.has('Security Headers');
+      if (onlyHeaders) {
+        lines.push('');
+        lines.push(`(These are mostly best-practice headers - not urgent, but worth adding when you have time.)`);
+      }
     }
   }
 
   // Minor issues get brief mention
-  if (minor.length > 0 && highImpact.length > 0) {
+  if (minor.length > 0 && (highImpact.length > 0 || mediumImpact.length > 0)) {
     lines.push('');
-    const minorNames = minor.slice(0, 3).map(i => getMinorIssueName(i)).join(', ');
-    lines.push(`Also a couple minor things (${minorNames}) but the above is the main one.`);
+    const minorNames = minor.slice(0, 2).map(i => getMinorIssueName(i)).join(', ');
+    lines.push(`Plus some smaller things (${minorNames}).`);
   } else if (minor.length > 0) {
     // Only minor issues found
     for (const issue of minor.slice(0, 3)) {

@@ -1,81 +1,93 @@
 # URL Security Scanner - Roadmap
 
-## What's Done (v2.2)
+## What's Done (v2.3)
 
+### Core Features
 - [x] Two-phase scanning (internal + external validation)
-- [x] Mozilla Observatory API integration
-- [x] Nuclei v3.7.0 vulnerability scanner
 - [x] Split reports: Executive Summary (human) + Agent Report (AI)
-- [x] DM generator with ACTUAL RISK explanations
+- [x] DM generator with beginner-friendly explanations
 - [x] Scan history + stats command
-- [x] Red-teamed 4x, false positives minimized
 
----
+### External Integrations
+- [x] Mozilla Observatory API
+- [x] Nuclei v3.7.0 vulnerability scanner
+- [x] SSL Labs API (cached results)
+- [x] crt.sh Certificate Transparency (subdomain discovery)
+- [x] URLScan.io (malware/reputation check)
+- [x] Google PageSpeed (optional, slow)
+- [x] Manual check links: VirusTotal, Shodan, SecurityHeaders.com
 
-## Next Priority: Landing Page
-
-**Status:** Draft created in `site/index.html`
-
-**To deploy:**
-1. Host on Vercel/Netlify/GitHub Pages
-2. Scan our own site - must get Grade A
-3. Add proper security headers in hosting config
-
-**Features:**
-- Single page, dark theme, mobile responsive
-- Personal tone - "one developer helping another"
-- Explains checks in beginner language
-- CTA: DM on X (@CodeExplorerHQ)
-
----
-
-## Success Metrics
-
-- [ ] 20 sites scanned
-- [ ] 5 connections made
-- [ ] Landing page live (Grade A)
-- [ ] First X thread from scan data
+### Quality Improvements (v2.3 - this session)
+- [x] **Severity recalibration** - HSTS downgraded to MEDIUM (honest about real-world impact)
+- [x] **"Not Checked" disclaimers** - Prominent section explaining what we can't test
+- [x] **Tech detection accuracy** - Fixed false positives (WordPress/Webflow/Ghost on tool sites)
+- [x] **Parallel external scans** - All APIs run concurrently for speed
+- [x] **DM honesty** - Adds "(mostly best-practice headers)" when only finding header issues
 
 ---
 
 ## Future Ideas
 
-| Feature | Value | Effort |
-|---------|-------|--------|
-| Subdomain takeover detection | Medium | Low |
-| Supabase/Firebase open RLS checks | High | Medium |
-| More API key patterns (Twilio, SendGrid) | Medium | Low |
-| Re-scan tracking (show improvements) | Medium | Medium |
-| Web form for URL submission | Low | Medium |
+### High Value / Low Effort
+| Feature | Why |
+|---------|-----|
+| **More API key patterns** | Twilio, SendGrid, Mailgun, Postmark - common for vibe coders |
+| **Subdomain takeover check** | crt.sh gives us subdomains, check if they resolve to dangling CNAMEs |
+| **Re-scan comparison** | "Last scan: Grade D → This scan: Grade C - improved!" |
+
+### High Value / Medium Effort
+| Feature | Why |
+|---------|-----|
+| **VirusTotal API** | Free tier available, automated reputation scoring |
+| **Supabase RLS detection** | Huge for vibe coders - detect open anon policies |
+| **Form detection → CSP priority** | If site has forms, bump CSP to HIGH severity |
+
+### Lower Priority
+| Feature | Why Lower |
+|---------|-----------|
+| Web form for URL submission | CLI is fine for now |
+| X thread auto-generator | Nice-to-have, manual works |
+| Headless browser scanning | Complex, limited value for header checks |
 
 ---
 
-## Known Limitations (from red teaming)
+## Exercises to Run Periodically
+
+From the quality framework:
+
+1. **One-Fix Optimization** (#12) - "If they could only fix ONE thing, what should it be?"
+2. **False Reassurance Check** (#6) - "Does anything imply the app is 'safe' when unknowns remain?"
+3. **Confidence Calibration** (#3) - "Are severity levels honest given available evidence?"
+4. **User Comprehension** (#5) - "What would confuse a non-security developer?"
+
+---
+
+## Known Limitations
+
+Fundamental to "outside-in" URL-only scanning:
 
 1. **Obfuscated API keys** - Can't detect `atob()` or string concatenation
-2. **Client-side XSS** - Would need headless browser
+2. **Client-side XSS** - Would need headless browser + input testing
 3. **Auth/business logic** - Can't test without credentials
-4. **CDN masking** - We see edge, not origin
+4. **Rate limiting** - Can't test without making many requests
+5. **CDN masking** - We see edge servers, not origin
 
-These are fundamental to "outside-in" scanning. Be honest about scope.
+**We're explicit about these in reports.** The "Not Checked" section tells users what matters more than headers.
 
 ---
 
 ## Code Quality Backlog
 
-From 2026-02-02 audit (24 issues found):
+From previous audit:
 
-**Critical (fix soon):**
+**High Priority:**
 - Timeout cleanup race conditions in scanner.ts
-- Nuclei findings validation logic in combined.ts
 - Socket leak potential in ssl.ts
-
-**High:**
 - Missing timeout on CORS preflight requests
+
+**Medium:**
 - Unsafe type casting in cookies.ts
 - JSON parsing without size limits
-
-See full audit in session history.
 
 ---
 

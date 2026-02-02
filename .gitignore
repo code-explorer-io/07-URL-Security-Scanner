@@ -21,10 +21,13 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Test outputs (keep template, ignore actual scans)
-outputs/*.md
-outputs/*.txt
+# Scan outputs (keep folder structure, ignore actual scan results)
+outputs/*/
 !outputs/.gitkeep
+
+# Scan history (used for stats)
+scans/*.json
+!scans/.gitkeep
 
 # External tools (download locally, don't commit binaries)
 tools/

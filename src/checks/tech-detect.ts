@@ -189,14 +189,14 @@ const TECH_SIGNATURES: TechSignature[] = [
     ]
   },
 
-  // CMS
+  // CMS - patterns made more specific to avoid false positives on tool directories
   {
     name: 'WordPress',
     category: 'cms',
     html: [
-      /wp-content/,
-      /wp-includes/,
-      /wordpress/i
+      /\/wp-content\//,           // Must be a path, not just text
+      /\/wp-includes\//,          // Must be a path
+      /wp-json\/wp\/v2/           // WordPress REST API
     ],
     paths: ['/wp-admin/', '/wp-content/', '/wp-includes/']
   },
@@ -207,32 +207,32 @@ const TECH_SIGNATURES: TechSignature[] = [
       { name: 'x-shopify-stage', pattern: /.+/ }
     ],
     html: [
-      /cdn\.shopify\.com/,
-      /Shopify\.theme/
+      /cdn\.shopify\.com\//,      // Shopify CDN
+      /Shopify\.theme\s*=/        // Shopify theme object
     ]
   },
   {
     name: 'Webflow',
     category: 'cms',
     html: [
-      /webflow/i,
-      /assets\.website-files\.com/
+      /assets\.website-files\.com\//,  // Webflow assets CDN
+      /webflow\.com\/design\//         // Webflow design tools
     ]
   },
   {
     name: 'Wix',
     category: 'cms',
     html: [
-      /wix\.com/,
-      /wixstatic\.com/
+      /static\.wixstatic\.com\//,   // Wix static assets
+      /wix-code-sdk/                // Wix code SDK
     ]
   },
   {
     name: 'Squarespace',
     category: 'cms',
     html: [
-      /squarespace/i,
-      /sqsp\.net/
+      /static1\.squarespace\.com\//,  // Squarespace CDN
+      /sqsp\.net\//                   // Squarespace assets
     ]
   },
   {
@@ -242,8 +242,8 @@ const TECH_SIGNATURES: TechSignature[] = [
       { name: 'x-ghost-cache-status', pattern: /.+/ }
     ],
     html: [
-      /ghost-/,
-      /content\/themes/
+      /ghost\/api\/content\//,        // Ghost Content API
+      /\/content\/images\/\d{4}/      // Ghost image structure
     ]
   },
 

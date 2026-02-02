@@ -386,8 +386,16 @@ async function handleOutreachMode(
 
   console.log('');
   console.log('   External validation complete!');
+
+  // Notify about failed external tools
+  const observatoryResult = externalResults.results.find(r => r.source === 'Mozilla Observatory');
+  if (!observatoryResult) {
+    console.log('   ⚠️  Mozilla Observatory: FAILED (API error - may need manual check)');
+  }
   if (externalResults.nucleiAvailable === false) {
-    console.log('   (Nuclei not available - install for deeper scanning)');
+    console.log('   ⚠️  Nuclei: Not installed (install for deeper scanning)');
+  } else if (!nucleiResult) {
+    console.log('   ⚠️  Nuclei: FAILED to run');
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -415,24 +423,21 @@ async function handleOutreachMode(
   // Generate both reports
   const reports = generateCombinedReports(combined, projectName);
 
-  // Create output directory
-  const outputDir = path.resolve('outputs');
+  // Create output directory per domain
+  const outputDir = path.resolve('outputs', domain);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  // Save reports locally
-  const summaryPath = path.join(outputDir, `executive-summary-${domain}.md`);
-  const agentPath = path.join(outputDir, `agent-report-${domain}.md`);
+  // Save individual reports
+  const summaryPath = path.join(outputDir, 'executive-summary.md');
+  const agentPath = path.join(outputDir, 'agent-report.md');
 
   fs.writeFileSync(summaryPath, reports.executiveSummary, 'utf-8');
   fs.writeFileSync(agentPath, reports.agentReport, 'utf-8');
 
-  console.log('   📄 Executive Summary (for the person)');
-  console.log('   📋 Agent Report (for their AI assistant)');
-
   // Upload to gist if requested
-  let gistUrl = '[gist-url-here]';
+  let gistUrl = '[not uploaded]';
 
   if (uploadGist) {
     console.log('');
@@ -459,46 +464,190 @@ async function handleOutreachMode(
   // Generate DM message
   const dmContent = generateDmContent(result, score, gistUrl, projectName);
 
-  const dmPath = path.join(outputDir, `dm-${domain}.txt`);
+  const dmPath = path.join(outputDir, 'dm.txt');
   fs.writeFileSync(dmPath, dmContent.message, 'utf-8');
 
   // Save scan history for pattern analysis
   saveScanHistory(result, score, gistUrl);
 
+  // Build checklist for consolidated report
+  const checklist = [
+    { name: 'Internal scan (headers, cookies, CORS)', status: true },
+    { name: 'DNS security (SPF/DMARC)', status: true },
+    { name: 'API key exposure check', status: true },
+    { name: 'Mozilla Observatory', status: !!observatoryResult },
+    { name: 'Nuclei vulnerability scan', status: externalResults.nucleiAvailable !== false && !!nucleiResult },
+  ];
+
+  // Generate consolidated REPORT.md
+  const consolidatedReport = generateConsolidatedReport({
+    domain,
+    url: result.url,
+    grade: score.grade,
+    scoreNum: score.score,
+    timestamp: new Date().toISOString(),
+    checklist,
+    summary: {
+      critical: result.summary.critical,
+      high: result.summary.high,
+      medium: result.summary.medium,
+      low: result.summary.low,
+      total: result.summary.total
+    },
+    observatoryGrade: observatoryResult?.grade,
+    gistUrl,
+    topIssues: result.checks
+      .flatMap(c => c.issues)
+      .filter(i => i.severity === 'critical' || i.severity === 'high' || i.severity === 'medium')
+      .slice(0, 5)
+      .map(i => ({ title: i.title, severity: i.severity, fix: i.fix }))
+  });
+
+  const reportPath = path.join(outputDir, 'REPORT.md');
+  fs.writeFileSync(reportPath, consolidatedReport, 'utf-8');
+
+  // ═══════════════════════════════════════════════════════════════════
+  // SCAN CHECKLIST - What ran, what didn't
+  // ═══════════════════════════════════════════════════════════════════
+  console.log('');
+  console.log('╔═══════════════════════════════════════════════════════════════════╗');
+  console.log('║                    SCAN CHECKLIST                                 ║');
+  console.log('╚═══════════════════════════════════════════════════════════════════╝');
+  console.log('');
+
+  let allPassed = true;
+  for (const item of checklist) {
+    const icon = item.status ? '✅' : '❌';
+    const statusText = item.status ? 'Done' : 'FAILED';
+    console.log(`   ${icon} ${item.name}: ${statusText}`);
+    if (!item.status) allPassed = false;
+  }
+
+  console.log('');
+  if (!allPassed) {
+    console.log('   ⚠️  INCOMPLETE SCAN - Some tools failed! Review before sending.');
+    console.log('');
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // FINAL SUMMARY
   // ═══════════════════════════════════════════════════════════════════
-  console.log('');
   console.log('═'.repeat(67));
   console.log('');
-  console.log(`🎯 Outreach Package Ready for: ${domain}`);
+  console.log(`🎯 Scan Complete: ${domain}`);
   console.log('');
-  console.log('┌─────────────────────────────────────────────────────────────────┐');
-  console.log(`│  Grade: ${score.grade} (${score.score}/100)                                            │`);
-  console.log(`│  Phase 1 Issues: ${result.summary.total} total                                       │`);
-  console.log(`│  Phase 2 Validation: ${combined.analysis.confidence} confidence                           │`);
-  console.log('└─────────────────────────────────────────────────────────────────┘');
-  console.log('');
-  console.log('📁 Files generated:');
-  console.log(`   ${summaryPath}`);
-  console.log(`   ${agentPath}`);
-  console.log(`   ${dmPath}`);
+  console.log(`   Grade: ${score.grade} (${score.score}/100)`);
+  console.log(`   Issues: ${result.summary.critical} critical, ${result.summary.high} high, ${result.summary.medium} medium, ${result.summary.low} low`);
+  if (observatoryResult?.grade) {
+    console.log(`   Observatory: ${observatoryResult.grade}`);
+  }
   console.log('');
 
-  if (gistUrl !== '[gist-url-here]') {
-    console.log(`🔗 Gist URL: ${gistUrl}`);
+  // Output folder
+  console.log(`📁 Output: outputs/${domain}/`);
+  console.log('   ├── REPORT.md        ← Start here (summary of everything)');
+  console.log('   ├── executive-summary.md');
+  console.log('   ├── agent-report.md');
+  console.log('   └── dm.txt');
+  console.log('');
+
+  if (gistUrl !== '[not uploaded]') {
+    console.log(`🔗 Gist: ${gistUrl}`);
     console.log('');
   }
 
   // Show DM message
-  console.log('📨 DM Message (copy this):');
-  console.log('─'.repeat(40));
+  console.log('📨 DM Message:');
+  console.log('─'.repeat(50));
   console.log(dmContent.message);
-  console.log('─'.repeat(40));
+  console.log('─'.repeat(50));
   console.log('');
-  console.log('💡 Tell them: "The Executive Summary is for you.');
-  console.log('   The Agent Report is for your AI assistant to fix the issues."');
-  console.log('');
+}
+
+/**
+ * Generate a consolidated report with everything in one place
+ */
+function generateConsolidatedReport(data: {
+  domain: string;
+  url: string;
+  grade: string;
+  scoreNum: number;
+  timestamp: string;
+  checklist: Array<{ name: string; status: boolean }>;
+  summary: { critical: number; high: number; medium: number; low: number; total: number };
+  observatoryGrade?: string;
+  gistUrl: string;
+  topIssues: Array<{ title: string; severity: string; fix: string }>;
+}): string {
+  const lines: string[] = [];
+  const allPassed = data.checklist.every(c => c.status);
+
+  lines.push(`# Security Scan Report: ${data.domain}`);
+  lines.push('');
+  lines.push(`**Scanned:** ${new Date(data.timestamp).toLocaleString()}`);
+  lines.push(`**URL:** ${data.url}`);
+  lines.push('');
+
+  // Grade box
+  lines.push('## Grade');
+  lines.push('');
+  lines.push(`| Grade | Score | Observatory |`);
+  lines.push(`|-------|-------|-------------|`);
+  lines.push(`| **${data.grade}** | ${data.scoreNum}/100 | ${data.observatoryGrade || 'N/A'} |`);
+  lines.push('');
+
+  // Checklist
+  lines.push('## Scan Checklist');
+  lines.push('');
+  for (const item of data.checklist) {
+    const icon = item.status ? '✅' : '❌';
+    lines.push(`- ${icon} ${item.name}`);
+  }
+  lines.push('');
+  if (!allPassed) {
+    lines.push('> ⚠️ **INCOMPLETE SCAN** - Some tools failed. Results may be partial.');
+    lines.push('');
+  }
+
+  // Summary
+  lines.push('## Issues Summary');
+  lines.push('');
+  lines.push(`| Severity | Count |`);
+  lines.push(`|----------|-------|`);
+  lines.push(`| Critical | ${data.summary.critical} |`);
+  lines.push(`| High | ${data.summary.high} |`);
+  lines.push(`| Medium | ${data.summary.medium} |`);
+  lines.push(`| Low | ${data.summary.low} |`);
+  lines.push(`| **Total** | **${data.summary.total}** |`);
+  lines.push('');
+
+  // Top issues
+  if (data.topIssues.length > 0) {
+    lines.push('## Top Issues');
+    lines.push('');
+    for (const issue of data.topIssues) {
+      lines.push(`### [${issue.severity.toUpperCase()}] ${issue.title}`);
+      lines.push('');
+      lines.push(`**Fix:** ${issue.fix}`);
+      lines.push('');
+    }
+  }
+
+  // Links
+  lines.push('## Links');
+  lines.push('');
+  if (data.gistUrl !== '[not uploaded]') {
+    lines.push(`- **Gist Report:** ${data.gistUrl}`);
+  }
+  lines.push(`- **Executive Summary:** executive-summary.md`);
+  lines.push(`- **Agent Report:** agent-report.md`);
+  lines.push(`- **DM Message:** dm.txt`);
+  lines.push('');
+
+  lines.push('---');
+  lines.push(`*Generated by URL Security Scanner v${VERSION}*`);
+
+  return lines.join('\n');
 }
 
 function printSummary(result: ExtendedScanResult, score: ReturnType<typeof calculateScore>): void {

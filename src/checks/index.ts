@@ -7,5 +7,5 @@ export { checkServerInfo } from './server-info';
 export { checkAdminPaths } from './admin-paths';
 export { checkRobots } from './robots';
 export { checkDnsSecurity } from './dns-security';
-export { checkApiKeys } from './api-keys';
+export { checkApiKeys, checkClientSidePermissions } from './api-keys';
 export { checkTechStack } from './tech-detect';

@@ -10,6 +10,7 @@ import {
   checkRobots,
   checkDnsSecurity,
   checkApiKeys,
+  checkClientSidePermissions,
   checkTechStack
 } from './checks';
 
@@ -42,7 +43,7 @@ export async function scanUrl(options: ExtendedScanOptions): Promise<ExtendedSca
   const isHttps = parsedUrl.protocol === 'https:';
 
   // Calculate total checks based on mode
-  const totalChecks = outreach ? 10 : 11; // Outreach skips admin paths
+  const totalChecks = outreach ? 11 : 12; // Outreach skips admin paths
 
   if (verbose) {
     console.log(`\nScanning: ${baseUrl}`);
@@ -157,19 +158,24 @@ export async function scanUrl(options: ExtendedScanOptions): Promise<ExtendedSca
   if (verbose) console.log(`  [${checkNum}/${totalChecks}] Scanning for exposed API keys...`);
   parallelChecks.push(checkApiKeys(normalizedUrl, timeout));
 
-  // Step 10: Exposed files
+  // Step 10: Client-side permission patterns (partial check)
+  checkNum++;
+  if (verbose) console.log(`  [${checkNum}/${totalChecks}] Checking for client-side permission patterns...`);
+  parallelChecks.push(checkClientSidePermissions(normalizedUrl, mainHtml, timeout));
+
+  // Step 11: Exposed files
   checkNum++;
   if (verbose) console.log(`  [${checkNum}/${totalChecks}] Checking exposed files...`);
   parallelChecks.push(checkExposedFiles(baseUrl, timeout));
 
-  // Step 11: Admin paths (skip in outreach mode by default)
+  // Step 12: Admin paths (skip in outreach mode by default)
   if (!outreach && !skipAdminPaths) {
     checkNum++;
     if (verbose) console.log(`  [${checkNum}/${totalChecks}] Checking admin paths...`);
     parallelChecks.push(checkAdminPaths(baseUrl, timeout, mainHtml));
   }
 
-  // Step 12: Robots.txt
+  // Step 13: Robots.txt
   checkNum++;
   if (verbose) console.log(`  [${checkNum}/${totalChecks}] Checking robots.txt...`);
   parallelChecks.push(checkRobots(baseUrl, timeout));

@@ -423,3 +423,157 @@ export async function checkApiKeys(url: string, timeout: number = 10000): Promis
     }
   };
 }
+
+/**
+ * Patterns that suggest client-side permission checks
+ * These are RED FLAGS - business logic that should be on the server
+ */
+const CLIENT_SIDE_PERMISSION_PATTERNS = [
+  // Pro/Premium checks
+  { pattern: /\b(?:is|has)Pro\b/gi, name: 'isPro' },
+  { pattern: /\b(?:is|has)Premium\b/gi, name: 'isPremium' },
+  { pattern: /\b(?:is|has)Paid\b/gi, name: 'isPaid' },
+  { pattern: /\b(?:is|has)Subscribed\b/gi, name: 'isSubscribed' },
+  { pattern: /\bsubscription\s*(?:===?|!==?)\s*['"](?:pro|premium|paid)/gi, name: 'subscription check' },
+  { pattern: /\bplan\s*(?:===?|!==?)\s*['"](?:pro|premium|free|paid)/gi, name: 'plan check' },
+
+  // Admin/Role checks
+  { pattern: /\b(?:is|has)Admin\b/gi, name: 'isAdmin' },
+  { pattern: /\brole\s*(?:===?|!==?)\s*['"]admin['"]/gi, name: 'role === admin' },
+  { pattern: /\buserRole\b/gi, name: 'userRole' },
+  { pattern: /\b(?:is|has)Moderator\b/gi, name: 'isModerator' },
+
+  // Feature flag checks (could be fine, but worth noting)
+  { pattern: /\bcanAccess\w+\b/gi, name: 'canAccess*' },
+  { pattern: /\bhasFeature\b/gi, name: 'hasFeature' },
+  { pattern: /\bfeatureEnabled\b/gi, name: 'featureEnabled' },
+];
+
+interface PermissionPatternMatch {
+  name: string;
+  location: string;
+  context: string;
+}
+
+/**
+ * Scan for client-side permission patterns in JavaScript
+ */
+function scanForPermissionPatterns(content: string, location: string): PermissionPatternMatch[] {
+  const found: PermissionPatternMatch[] = [];
+
+  for (const { pattern, name } of CLIENT_SIDE_PERMISSION_PATTERNS) {
+    pattern.lastIndex = 0;
+    const match = pattern.exec(content);
+    if (match) {
+      // Get surrounding context (30 chars before and after)
+      const start = Math.max(0, match.index - 30);
+      const end = Math.min(content.length, match.index + match[0].length + 30);
+      const context = content.substring(start, end).replace(/\s+/g, ' ').trim();
+
+      // Avoid duplicates
+      if (!found.some(f => f.name === name)) {
+        found.push({ name, location, context });
+      }
+    }
+  }
+
+  return found;
+}
+
+/**
+ * Check for client-side permission patterns
+ * Returns warnings (not errors) since we can't know for sure if they're vulnerable
+ */
+export async function checkClientSidePermissions(url: string, htmlContent?: string, timeout: number = 10000): Promise<CheckResult> {
+  const issues: SecurityIssue[] = [];
+  const allMatches: PermissionPatternMatch[] = [];
+
+  try {
+    let html = htmlContent;
+
+    if (!html) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: { 'User-Agent': 'SecurityScanner/2.0 (Security Audit)' }
+      });
+
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        return { name: 'Client-Side Permissions', passed: true, issues: [], details: {} };
+      }
+      html = await response.text();
+    }
+
+    // Scan inline scripts
+    const inlineScriptRegex = /<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/gi;
+    let inlineMatch;
+    while ((inlineMatch = inlineScriptRegex.exec(html)) !== null) {
+      const scriptContent = inlineMatch[1];
+      if (scriptContent.trim()) {
+        const found = scanForPermissionPatterns(scriptContent, 'inline script');
+        allMatches.push(...found);
+      }
+    }
+
+    // Extract and scan external JS files (limit to first 3)
+    const jsUrls = extractJsUrls(html, url).slice(0, 3);
+
+    for (const jsUrl of jsUrls) {
+      try {
+        const jsController = new AbortController();
+        const jsTimeoutId = setTimeout(() => jsController.abort(), 5000);
+
+        const jsResponse = await fetch(jsUrl, {
+          method: 'GET',
+          signal: jsController.signal,
+          headers: { 'User-Agent': 'SecurityScanner/2.0 (Security Audit)' }
+        });
+
+        clearTimeout(jsTimeoutId);
+
+        if (jsResponse.ok) {
+          const jsContent = await jsResponse.text();
+          const contentToScan = jsContent.substring(0, 300000); // First 300KB
+          const found = scanForPermissionPatterns(contentToScan, new URL(jsUrl).pathname);
+          allMatches.push(...found);
+        }
+      } catch {
+        // Skip failed fetches
+      }
+    }
+
+    // If we found concerning patterns, add a warning
+    if (allMatches.length > 0) {
+      const patternNames = [...new Set(allMatches.map(m => m.name))].slice(0, 5);
+      issues.push({
+        id: 'clientside-permission-check',
+        severity: 'medium',
+        category: 'Code Review',
+        title: `Possible client-side permission checks found`,
+        description: `Found patterns like "${patternNames.join('", "')}" in JavaScript. If these control access to paid features or admin functions, make sure they're ALSO enforced on your server. Client-side checks can be bypassed via browser DevTools.`,
+        fix: 'Ensure all permission checks happen on your backend API, not just in frontend JavaScript. The server should verify permissions before returning sensitive data or allowing actions.'
+      });
+    }
+
+  } catch (error) {
+    return {
+      name: 'Client-Side Permissions',
+      passed: true,
+      issues: [],
+      details: { error: error instanceof Error ? error.message : 'Unknown error' }
+    };
+  }
+
+  return {
+    name: 'Client-Side Permissions',
+    passed: issues.length === 0,
+    issues,
+    details: {
+      patternsFound: allMatches.map(m => ({ name: m.name, location: m.location }))
+    }
+  };
+}

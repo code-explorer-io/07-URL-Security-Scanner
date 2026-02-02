@@ -9,54 +9,66 @@ interface HeaderCheck {
   validate?: (value: string) => boolean;
 }
 
+/**
+ * Security headers ranked by REAL-WORLD IMPACT for typical indie/vibe coder sites.
+ *
+ * Calibration notes (Exercise #12 - One-Fix Optimization):
+ * - CSP: Actually prevents XSS attacks. Most impactful for sites with user input.
+ * - HSTS: Good practice, but modern browsers/hosts already prefer HTTPS. Downgraded to MEDIUM.
+ * - X-Frame-Options: Prevents clickjacking. Medium risk for most sites.
+ * - X-Content-Type-Options: Low-effort fix, prevents MIME confusion. Keep at MEDIUM.
+ *
+ * NOTE: The things we CAN'T check (rate limiting, input sanitization, auth flow)
+ * are often MORE impactful than header issues. We're explicit about this in reports.
+ */
 const SECURITY_HEADERS: HeaderCheck[] = [
   {
     name: 'Content-Security-Policy',
     header: 'content-security-policy',
-    severity: 'medium',  // Lowered from high - many legitimate sites don't have CSP, harder to configure correctly
-    description: 'CSP prevents XSS attacks by controlling which resources can be loaded',
+    severity: 'medium',  // Would be HIGH if we could detect user input forms
+    description: 'CSP prevents XSS attacks by controlling which resources can be loaded. This is your main defense if malicious code ever gets injected.',
     fix: "Add header: Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
   },
   {
     name: 'Strict-Transport-Security',
     header: 'strict-transport-security',
-    severity: 'high',
-    description: 'HSTS forces browsers to use HTTPS, preventing downgrade attacks',
-    fix: 'Add header: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload'
+    severity: 'medium',  // Downgraded: modern browsers + hosts like Vercel already prefer HTTPS
+    description: 'HSTS tells browsers to always use HTTPS. Most modern hosts already redirect HTTP→HTTPS, so this is defense-in-depth.',
+    fix: 'Add header: Strict-Transport-Security: max-age=31536000; includeSubDomains'
   },
   {
     name: 'X-Frame-Options',
     header: 'x-frame-options',
     severity: 'medium',
-    description: 'Prevents clickjacking by controlling if the site can be embedded in iframes',
+    description: 'Prevents clickjacking by controlling if your site can be embedded in iframes on other sites',
     fix: 'Add header: X-Frame-Options: DENY (or SAMEORIGIN if you need iframes)'
   },
   {
     name: 'X-Content-Type-Options',
     header: 'x-content-type-options',
-    severity: 'medium',
-    description: 'Prevents MIME-type sniffing attacks',
+    severity: 'low',  // Downgraded: very edge-case attack, easy fix but low real-world impact
+    description: 'Prevents browsers from guessing file types, which can cause security issues in edge cases',
     fix: 'Add header: X-Content-Type-Options: nosniff'
   },
   {
     name: 'Referrer-Policy',
     header: 'referrer-policy',
     severity: 'low',
-    description: 'Controls how much referrer information is sent with requests',
+    description: 'Controls how much URL information is shared when users click links to other sites',
     fix: 'Add header: Referrer-Policy: strict-origin-when-cross-origin'
   },
   {
     name: 'Permissions-Policy',
     header: 'permissions-policy',
     severity: 'low',
-    description: 'Controls which browser features the site can use',
+    description: 'Restricts which browser features (camera, mic, location) your site can use',
     fix: 'Add header: Permissions-Policy: geolocation=(), microphone=(), camera=()'
   },
   {
     name: 'X-XSS-Protection',
     header: 'x-xss-protection',
     severity: 'low',
-    description: 'Legacy XSS filter (deprecated but still useful for older browsers)',
+    description: 'Legacy XSS filter. Deprecated in modern browsers but still helps older ones.',
     fix: 'Add header: X-XSS-Protection: 1; mode=block'
   }
 ];
