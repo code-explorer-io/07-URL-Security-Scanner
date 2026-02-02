@@ -295,7 +295,7 @@ export function generateDmMessage(
         lines.push(`Also spotted: ${otherLow} - but honestly these are just nice-to-haves.`);
       }
       lines.push('');
-      lines.push(`Happy to share the full details if you want them - us vibe coders gotta look out for each other!`);
+      lines.push(`Happy to share the full details if you want them. Let me know if you need anything else!`);
       return lines.join('\n');
     }
 
@@ -304,24 +304,28 @@ export function generateDmMessage(
     lines.push('');
     lines.push(`Always cool to see someone shipping with security in mind.`);
     lines.push('');
-    lines.push(`Happy to help if you ever have questions - us vibe coders gotta look out for each other!`);
+    lines.push(`Let me know if you need anything else!`);
     return lines.join('\n');
   }
 
   lines.push(`Ran a quick security check (I do this for fun). Found something worth mentioning:`);
   lines.push('');
 
+  // Track issue number for readability
+  let issueNum = 1;
+
   // High-impact issues get full explanation with new format
   if (highImpact.length > 0) {
     const main = highImpact[0];
-    lines.push(`${main.explanation.short}`);
+    lines.push(`${issueNum}. ${main.explanation.short}`);
     lines.push(`What this means: ${main.explanation.risk}`);
+    issueNum++;
 
     // Additional high-impact issues (if any)
-    if (highImpact.length > 1) {
+    for (const item of highImpact.slice(1, 3)) {
       lines.push('');
-      const others = highImpact.slice(1, 3).map(h => h.explanation.short).join(', ');
-      lines.push(`Also found: ${others}.`);
+      lines.push(`${issueNum}. ${item.explanation.short}`);
+      issueNum++;
     }
   }
 
@@ -330,19 +334,22 @@ export function generateDmMessage(
     // If we already have high-impact, be brief with medium
     if (highImpact.length > 0) {
       lines.push('');
-      const mediumTerms = mediumImpact.slice(0, 2).map(m => m.explanation.term).join(', ');
-      lines.push(`Also found: ${mediumTerms}.`);
+      for (const item of mediumImpact.slice(0, 2)) {
+        lines.push(`${issueNum}. ${item.explanation.term}`);
+        issueNum++;
+      }
     } else {
       // Medium is the top priority - give full explanation with new format
       const main = mediumImpact[0];
-      lines.push(`${main.explanation.term}`);
+      lines.push(`${issueNum}. ${main.explanation.term}`);
       lines.push(`What this means: ${main.explanation.means}. ${main.explanation.bad}.`);
+      issueNum++;
 
       // Additional medium-impact issues (brief)
-      if (mediumImpact.length > 1) {
+      for (const item of mediumImpact.slice(1, 3)) {
         lines.push('');
-        const others = mediumImpact.slice(1, 3).map(m => m.explanation.term).join(', ');
-        lines.push(`Also found: ${others}.`);
+        lines.push(`${issueNum}. ${item.explanation.term}`);
+        issueNum++;
       }
 
       // If we ONLY found header issues (no API keys, no exposed files, etc.)
@@ -364,7 +371,8 @@ export function generateDmMessage(
   } else if (minor.length > 0) {
     // Only minor issues found
     for (const issue of minor.slice(0, 3)) {
-      lines.push(`- ${getMinorIssueName(issue)}`);
+      lines.push(`${issueNum}. ${getMinorIssueName(issue)}`);
+      issueNum++;
     }
   }
 
@@ -378,7 +386,7 @@ export function generateDmMessage(
   }
 
   lines.push('');
-  lines.push(`Happy to help if you have questions - us vibe coders gotta look out for each other!`);
+  lines.push(`Let me know if you need anything else!`);
 
   return lines.join('\n');
 }

@@ -34,7 +34,7 @@
 - [x] **LESSONS_LEARNED.md** - Document false positives to prevent repeats
 - [x] **ISSUES_FOUND.md** - Track scans and patterns over time
 - [x] **Improved DM wording** - No jargon (removed "SPF" reference)
-- [ ] **Evidence-based reporting** - Every claim includes proof (DNS response, header values, etc.)
+- [x] **Evidence-based reporting** - Every claim includes proof (DNS response, header values, etc.)
 
 ---
 

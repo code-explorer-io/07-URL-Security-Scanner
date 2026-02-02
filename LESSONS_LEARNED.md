@@ -86,3 +86,28 @@ If you see these, the pattern is probably too generic:
 - Matches in minified code without clear context
 - Pattern is just "letters + numbers" without prefix
 - Found in `debugId`, `_debugIds`, `sourceMap`, `chunk` contexts
+
+---
+
+## DM Tone Guidelines
+
+### Closing Lines
+
+**Current:** "Happy to help if you have questions - us vibe coders gotta look out for each other!"
+
+**Issue:** Assumes the recipient identifies as a "vibe coder" - might feel presumptuous.
+
+**Better alternatives:**
+- "Happy to help if you have questions!" (simple, universal)
+- "Let me know if you want help fixing any of these." (action-oriented)
+- "Feel free to reach out if you want a hand with any of this." (warm, no labels)
+- Just end after the report link (shortest, lets findings speak)
+
+**When to use "vibe coder":** Only in communities where that term is established (e.g., specific X/Twitter groups).
+
+### General DM Principles
+
+1. **No jargon** - If recipient might not know the term, don't use it (SPF, DMARC → "email spoofing protection")
+2. **One main issue** - Lead with the most impactful finding
+3. **Explain the risk** - "What this means: anyone can send emails as you"
+4. **Offer help, don't sell** - We're sharing knowledge, not pitching services
