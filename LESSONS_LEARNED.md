@@ -135,7 +135,7 @@ Plus some smaller things ([brief list of minor issues]).
 
 Got a detailed report on GitHub Gist: [gist URL]
 
-Let me know if you need anything else!
+Hope this helps!
 ```
 
 ### Key Rules

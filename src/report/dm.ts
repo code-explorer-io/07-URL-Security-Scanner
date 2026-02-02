@@ -295,7 +295,7 @@ export function generateDmMessage(
         lines.push(`Also spotted: ${otherLow} - but honestly these are just nice-to-haves.`);
       }
       lines.push('');
-      lines.push(`Happy to share the full details if you want them. Let me know if you need anything else!`);
+      lines.push(`Happy to share the full details if you want them. Hope this helps!`);
       return lines.join('\n');
     }
 
@@ -304,7 +304,7 @@ export function generateDmMessage(
     lines.push('');
     lines.push(`Always cool to see someone shipping with security in mind.`);
     lines.push('');
-    lines.push(`Let me know if you need anything else!`);
+    lines.push(`Hope this helps!`);
     return lines.join('\n');
   }
 
@@ -387,7 +387,7 @@ export function generateDmMessage(
   }
 
   lines.push('');
-  lines.push(`Let me know if you need anything else!`);
+  lines.push(`Hope this helps!`);
 
   return lines.join('\n');
 }
