@@ -1,0 +1,67 @@
+{
+  "domain": "example.com",
+  "url": "https://example.com",
+  "scannedAt": "2026-02-02T03:28:04.854Z",
+  "grade": "C",
+  "score": 67,
+  "summary": {
+    "critical": 0,
+    "high": 1,
+    "medium": 3,
+    "low": 3,
+    "total": 7
+  },
+  "issues": [
+    {
+      "title": "Missing Content-Security-Policy header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Strict-Transport-Security header",
+      "severity": "high",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-Frame-Options header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-Content-Type-Options header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Referrer-Policy header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Permissions-Policy header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-XSS-Protection header",
+      "severity": "low",
+      "category": "Security Headers"
+    }
+  ],
+  "topIssue": "Missing Strict-Transport-Security header",
+  "techStack": {
+    "detected": [
+      {
+        "name": "Cloudflare",
+        "category": "cdn",
+        "confidence": "high"
+      }
+    ],
+    "summary": {
+      "cdn": [
+        "Cloudflare"
+      ]
+    }
+  },
+  "gistUrl": null
+}

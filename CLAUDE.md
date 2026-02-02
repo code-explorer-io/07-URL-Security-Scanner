@@ -12,20 +12,20 @@ Scans websites for security issues and generates friendly outreach messages. Bui
 3. I generate reports + a DM you can send
 4. We discuss the findings so you learn
 
-## Quick Start (Copy-Paste)
+## Quick Start
 
 ```bash
-# Build first (if not already built)
-npm run build
+# Scan with gist link (recommended)
+node dist/index.js https://example.com --outreach --gist
 
-# Scan a site with full reports
-node dist/index.js https://example.com --outreach --verbose
+# Without gist (local files only)
+node dist/index.js https://example.com --outreach
 ```
 
-This creates three files in `outputs/`:
-- `dm-{domain}.txt` - Message to send them
-- `executive-summary-{domain}.md` - Human-readable report
-- `agent-report-{domain}.md` - Technical report for their AI assistant
+**Output:** One gist link you can share, containing:
+- DM message (ready to copy)
+- Executive Summary (for the person)
+- Agent Report (for their AI to fix issues)
 
 ## What Gets Checked
 

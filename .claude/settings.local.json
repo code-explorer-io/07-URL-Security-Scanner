@@ -16,7 +16,16 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(nslookup:*)",
-      "Bash(powershell -Command \"Resolve-DnsName -Name glowhub.space -Type TXT\")"
+      "Bash(powershell -Command \"Resolve-DnsName -Name glowhub.space -Type TXT\")",
+      "Bash(nuclei:*)",
+      "Bash(winget search:*)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(powershell -Command \"Expand-Archive -Path nuclei.zip -DestinationPath . -Force\")",
+      "Bash(powershell -Command \"Expand-Archive nuclei.zip .\")",
+      "Bash(\"c:\\\\Users\\\\Code Explorer\\\\Documents\\\\GitHub\\\\07-URL-Security-Scanner\\\\tools\\\\nuclei.exe\" -version)",
+      "Bash(\"c:\\\\Users\\\\Code Explorer\\\\Documents\\\\GitHub\\\\07-URL-Security-Scanner\\\\tools\\\\nuclei.exe\" -update-templates -silent)",
+      "Bash(powershell -Command \"Remove-Item README*.md -Force\")",
+      "Bash(grep:*)"
     ]
   }
 }

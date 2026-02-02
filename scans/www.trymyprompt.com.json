@@ -1,0 +1,77 @@
+{
+  "domain": "www.trymyprompt.com",
+  "url": "https://www.trymyprompt.com",
+  "scannedAt": "2026-02-02T03:49:01.868Z",
+  "grade": "C",
+  "score": 63,
+  "summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 4,
+    "low": 5,
+    "total": 9
+  },
+  "issues": [
+    {
+      "title": "Missing Content-Security-Policy header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-Frame-Options header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-Content-Type-Options header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Referrer-Policy header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Permissions-Policy header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-XSS-Protection header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "CORS allows any origin",
+      "severity": "medium",
+      "category": "CORS"
+    },
+    {
+      "title": "No SPF record found",
+      "severity": "low",
+      "category": "Email Security"
+    },
+    {
+      "title": "No DMARC record found",
+      "severity": "low",
+      "category": "Email Security"
+    }
+  ],
+  "topIssue": "Missing Content-Security-Policy header",
+  "techStack": {
+    "detected": [
+      {
+        "name": "Vercel",
+        "category": "hosting",
+        "confidence": "high"
+      }
+    ],
+    "summary": {
+      "hosting": [
+        "Vercel"
+      ]
+    }
+  },
+  "gistUrl": null
+}
