@@ -1,0 +1,72 @@
+{
+  "domain": "glowhub.space",
+  "url": "https://glowhub.space",
+  "scannedAt": "2026-02-02T02:41:22.064Z",
+  "grade": "D",
+  "score": 54,
+  "summary": {
+    "critical": 0,
+    "high": 1,
+    "medium": 4,
+    "low": 3,
+    "total": 8
+  },
+  "issues": [
+    {
+      "title": "Missing Content-Security-Policy header",
+      "severity": "high",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-Frame-Options header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-Content-Type-Options header",
+      "severity": "medium",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Referrer-Policy header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing Permissions-Policy header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "Missing X-XSS-Protection header",
+      "severity": "low",
+      "category": "Security Headers"
+    },
+    {
+      "title": "No SPF record found",
+      "severity": "medium",
+      "category": "Email Security"
+    },
+    {
+      "title": "No DMARC record found",
+      "severity": "medium",
+      "category": "Email Security"
+    }
+  ],
+  "topIssue": "Missing Content-Security-Policy header",
+  "techStack": {
+    "detected": [
+      {
+        "name": "Netlify",
+        "category": "hosting",
+        "confidence": "high"
+      }
+    ],
+    "summary": {
+      "hosting": [
+        "Netlify"
+      ]
+    }
+  },
+  "gistUrl": null
+}

@@ -36,6 +36,9 @@ OUTREACH MODE:
   --gist            Auto-upload reports to GitHub Gist (requires gh CLI)
   --name <project>  Project name for personalized DM message
 
+COMMANDS:
+  stats             Show aggregate stats from all scans (for X content)
+
 CHECKS PERFORMED:
   • Security Headers (CSP, HSTS, X-Frame-Options, etc.)
   • SSL/TLS Configuration (certificate, TLS version)
@@ -63,6 +66,12 @@ async function main() {
   // Parse arguments
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     console.log(HELP_TEXT);
+    process.exit(0);
+  }
+
+  // Check for stats command
+  if (args[0] === 'stats') {
+    showStats();
     process.exit(0);
   }
 
@@ -155,6 +164,174 @@ async function main() {
   }
 }
 
+/**
+ * Show aggregate stats from all scans
+ * This is your X content generator - "Scanned 20 sites, here's what I found"
+ */
+function showStats(): void {
+  const scansDir = path.resolve('scans');
+
+  if (!fs.existsSync(scansDir)) {
+    console.log('No scans yet. Run some scans first!');
+    return;
+  }
+
+  const scanFiles = fs.readdirSync(scansDir).filter(f => f.endsWith('.json'));
+
+  if (scanFiles.length === 0) {
+    console.log('No scans yet. Run some scans first!');
+    return;
+  }
+
+  // Load all scans
+  const scans = scanFiles.map(f => {
+    const content = fs.readFileSync(path.join(scansDir, f), 'utf-8');
+    return JSON.parse(content);
+  });
+
+  // Calculate stats
+  const totalScans = scans.length;
+  const avgScore = Math.round(scans.reduce((sum, s) => sum + s.score, 0) / totalScans);
+
+  // Count issue frequency
+  const issueCount: Record<string, number> = {};
+  for (const scan of scans) {
+    for (const issue of scan.issues) {
+      const key = issue.title;
+      issueCount[key] = (issueCount[key] || 0) + 1;
+    }
+  }
+
+  // Sort by frequency
+  const sortedIssues = Object.entries(issueCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
+  // Grade distribution
+  const grades: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+  for (const scan of scans) {
+    grades[scan.grade] = (grades[scan.grade] || 0) + 1;
+  }
+
+  // Tech stack frequency
+  const techCount: Record<string, number> = {};
+  for (const scan of scans) {
+    // Handle both array format and object format
+    const techStack = scan.techStack;
+    if (Array.isArray(techStack)) {
+      for (const tech of techStack) {
+        techCount[tech] = (techCount[tech] || 0) + 1;
+      }
+    } else if (techStack?.detected) {
+      for (const tech of techStack.detected) {
+        techCount[tech.name] = (techCount[tech.name] || 0) + 1;
+      }
+    }
+  }
+  const sortedTech = Object.entries(techCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // Print stats
+  console.log('');
+  console.log('╔═══════════════════════════════════════════════════════════════════╗');
+  console.log('║                    URL Security Scanner - Stats                    ║');
+  console.log('╚═══════════════════════════════════════════════════════════════════╝');
+  console.log('');
+  console.log(`📊 Total scans: ${totalScans}`);
+  console.log(`📈 Average score: ${avgScore}/100`);
+  console.log('');
+  console.log('Grade distribution:');
+  for (const [grade, count] of Object.entries(grades)) {
+    if (count > 0) {
+      const pct = Math.round((count / totalScans) * 100);
+      const bar = '█'.repeat(Math.round(pct / 5));
+      console.log(`   ${grade}: ${bar} ${count} (${pct}%)`);
+    }
+  }
+  console.log('');
+  console.log('🔥 Most common issues:');
+  for (const [issue, count] of sortedIssues) {
+    const pct = Math.round((count / totalScans) * 100);
+    console.log(`   ${pct}% - ${issue} (${count}/${totalScans} sites)`);
+  }
+
+  if (sortedTech.length > 0) {
+    console.log('');
+    console.log('🛠️  Tech stacks detected:');
+    for (const [tech, count] of sortedTech) {
+      console.log(`   ${tech}: ${count} sites`);
+    }
+  }
+
+  console.log('');
+  console.log('─'.repeat(67));
+  console.log('');
+  console.log('💡 X Post idea:');
+  if (sortedIssues.length > 0) {
+    const topIssue = sortedIssues[0];
+    const pct = Math.round((topIssue[1] / totalScans) * 100);
+    console.log(`   "Scanned ${totalScans} vibe coder sites this month.`);
+    console.log(`   ${pct}% are missing ${topIssue[0].toLowerCase().replace('no ', '').replace('missing ', '')}.`);
+    console.log(`   Here's why that matters and how to fix it in 5 minutes..."`);
+  }
+  console.log('');
+}
+
+/**
+ * Save scan data for pattern analysis
+ * This builds our internal database to generate stats like "80% miss SPF"
+ */
+function saveScanHistory(
+  result: ExtendedScanResult,
+  score: ReturnType<typeof calculateScore>,
+  gistUrl: string
+): void {
+  const domain = new URL(result.url).hostname;
+  const scansDir = path.resolve('scans');
+
+  if (!fs.existsSync(scansDir)) {
+    fs.mkdirSync(scansDir, { recursive: true });
+  }
+
+  // Collect all issues with their details
+  const allIssues = result.checks.flatMap(c => c.issues);
+  const issues = allIssues.map(issue => ({
+    title: issue.title,
+    severity: issue.severity,
+    category: issue.category
+  }));
+
+  // Find the top issue (highest severity, first in list)
+  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+  const sortedIssues = [...allIssues].sort((a, b) =>
+    severityOrder[a.severity] - severityOrder[b.severity]
+  );
+  const topIssue = sortedIssues[0]?.title || 'None';
+
+  const scanData = {
+    domain,
+    url: result.url,
+    scannedAt: new Date().toISOString(),
+    grade: score.grade,
+    score: score.score,
+    summary: {
+      critical: result.summary.critical,
+      high: result.summary.high,
+      medium: result.summary.medium,
+      low: result.summary.low,
+      total: allIssues.length
+    },
+    issues,
+    topIssue,
+    techStack: result.techStack || [],
+    gistUrl: gistUrl !== '[gist-url-here]' ? gistUrl : null
+  };
+
+  const scanPath = path.join(scansDir, `${domain}.json`);
+  fs.writeFileSync(scanPath, JSON.stringify(scanData, null, 2), 'utf-8');
+}
+
 async function handleOutreachMode(
   result: ExtendedScanResult,
   score: ReturnType<typeof calculateScore>,
@@ -218,6 +395,9 @@ async function handleOutreachMode(
 
   const dmPath = path.join(outputDir, `dm-${domain}.txt`);
   fs.writeFileSync(dmPath, dmContent.message, 'utf-8');
+
+  // Save scan history for pattern analysis
+  saveScanHistory(result, score, gistUrl);
 
   // Print summary
   console.log('');
