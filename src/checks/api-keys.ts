@@ -170,6 +170,76 @@ const API_KEY_PATTERNS: ApiKeyPattern[] = [
     description: 'Mailgun API key found.',
     fix: 'Move to server-side environment variable.',
     confidence: 'high'
+  },
+  // Resend (popular with vibe coders)
+  {
+    name: 'Resend API Key',
+    service: 'Resend',
+    pattern: /re_[a-zA-Z0-9]{32,}/g,
+    severity: 'critical',
+    description: 'Resend API key found. Someone could send emails from your account.',
+    fix: 'Move to server-side. Use Resend\'s API from your backend, not frontend.',
+    confidence: 'high'
+  },
+  // Clerk (auth service popular with vibe coders)
+  {
+    name: 'Clerk Secret Key',
+    service: 'Clerk',
+    pattern: /sk_(?:live|test)_[a-zA-Z0-9]{24,}/g,
+    severity: 'critical',
+    description: 'Clerk secret key found. This gives full access to your auth system.',
+    fix: 'Only use Clerk publishable keys (pk_) in frontend. Secret keys go server-side.',
+    confidence: 'high'
+  },
+  // Vercel token
+  {
+    name: 'Vercel Token',
+    service: 'Vercel',
+    pattern: /vercel_[a-zA-Z0-9]{24,}/g,
+    severity: 'critical',
+    description: 'Vercel deployment token found. Could allow unauthorized deployments.',
+    fix: 'Rotate this token in Vercel settings immediately.',
+    confidence: 'high'
+  },
+  // Planetscale (popular serverless DB)
+  {
+    name: 'PlanetScale Connection',
+    service: 'PlanetScale',
+    pattern: /mysql:\/\/[^:]+:[^@]+@[^\/]*\.psdb\.cloud/g,
+    severity: 'critical',
+    description: 'PlanetScale database connection string found.',
+    fix: 'Move database connections to server-side. Use API routes.',
+    confidence: 'high'
+  },
+  // Neon (serverless Postgres)
+  {
+    name: 'Neon Database Connection',
+    service: 'Neon',
+    pattern: /postgres(?:ql)?:\/\/[^:]+:[^@]+@[^\/]*\.neon\.tech/g,
+    severity: 'critical',
+    description: 'Neon database connection string found.',
+    fix: 'Never expose database URLs in frontend. Use server-side API routes.',
+    confidence: 'high'
+  },
+  // Upstash Redis
+  {
+    name: 'Upstash Redis',
+    service: 'Upstash',
+    pattern: /rediss?:\/\/[^:]+:[^@]+@[^\/]*\.upstash\.io/g,
+    severity: 'critical',
+    description: 'Upstash Redis connection string found.',
+    fix: 'Use Upstash REST API with read-only tokens for frontend, or move to backend.',
+    confidence: 'high'
+  },
+  // Convex (realtime DB popular with vibe coders)
+  {
+    name: 'Convex Deploy Key',
+    service: 'Convex',
+    pattern: /prod:[a-zA-Z0-9|]+/g,
+    severity: 'high',
+    description: 'Possible Convex deploy key found.',
+    fix: 'Convex deploy keys should only be in CI/CD, not in frontend code.',
+    confidence: 'medium'
   }
 ];
 

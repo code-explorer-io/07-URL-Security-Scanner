@@ -34,6 +34,35 @@ const HIGH_IMPACT_EXPLANATIONS: Record<string, { short: string; risk: string }> 
     short: '.env file exposed',
     risk: 'your secrets file is publicly accessible - passwords, API keys, everything in there is visible.'
   },
+  // Services popular with vibe coders
+  'Supabase': {
+    short: 'Supabase key exposed',
+    risk: 'your Supabase service key is visible - this bypasses Row Level Security (anyone can read/write your database).'
+  },
+  'Firebase': {
+    short: 'Firebase credentials exposed',
+    risk: 'Firebase admin credentials are visible - full access to your Firebase project.'
+  },
+  'Resend': {
+    short: 'Resend key exposed',
+    risk: 'your email API key is public - someone could send emails from your account.'
+  },
+  'Clerk': {
+    short: 'Clerk secret key exposed',
+    risk: 'your auth system secret key is visible - full access to user data.'
+  },
+  'PlanetScale': {
+    short: 'Database URL exposed',
+    risk: 'your database connection string is public - full database access.'
+  },
+  'Neon': {
+    short: 'Database URL exposed',
+    risk: 'your Postgres connection string is public - anyone can read your database.'
+  },
+  'Vercel': {
+    short: 'Vercel token exposed',
+    risk: 'your deployment token is visible - someone could deploy to your project.'
+  },
 };
 
 /**
@@ -143,6 +172,17 @@ export function generateDmMessage(
   // Opening
   lines.push(`Hey! Saw your site in the chat - looks great.`);
   lines.push('');
+
+  // Handle clean sites (no significant issues)
+  if (highImpact.length === 0 && minor.length === 0) {
+    lines.push(`Ran a quick security check (I do this for fun) and your site looks solid! SPF record set up, headers in place - you clearly know what you're doing.`);
+    lines.push('');
+    lines.push(`Just wanted to say nice work. Always cool to see someone shipping with security in mind.`);
+    lines.push('');
+    lines.push(`Happy to help if you have questions - us vibe coders gotta look out for each other!`);
+    return lines.join('\n');
+  }
+
   lines.push(`Ran a quick security check (I do this for fun). Found something worth mentioning:`);
   lines.push('');
 
@@ -180,7 +220,7 @@ export function generateDmMessage(
   }
 
   lines.push('');
-  lines.push(`The fixes are quick - you can paste them straight to your AI agent. Happy to help if you have questions!`);
+  lines.push(`Happy to help if you have questions - us vibe coders gotta look out for each other!`);
 
   return lines.join('\n');
 }

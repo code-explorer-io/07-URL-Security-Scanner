@@ -64,13 +64,14 @@ export async function checkSSL(url: string): Promise<CheckResult> {
           fix: 'Renew your SSL certificate before it expires'
         });
       } else if (sslDetails.daysUntilExpiry < 30) {
+        const expiryDate = sslDetails.validTo ? new Date(sslDetails.validTo).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'soon';
         issues.push({
           id: 'ssl-expiring',
           severity: 'medium',
           category: 'SSL/TLS',
           title: 'SSL certificate expiring soon',
-          description: `Certificate expires in ${sslDetails.daysUntilExpiry} days`,
-          fix: 'Plan to renew your SSL certificate soon'
+          description: `Certificate expires on ${expiryDate} (${sslDetails.daysUntilExpiry} days). Most hosting auto-renews, but worth checking.`,
+          fix: 'Check your hosting provider for auto-renewal settings, or manually renew before expiry'
         });
       }
     }
