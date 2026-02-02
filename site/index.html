@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free Security Check for Your Website | CodeExplorer</title>
+  <meta name="description" content="Get a free, friendly security check for your website. No jargon, just plain English explanations of what matters.">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --text: #e5e5e5;
+      --accent: #3b82f6;
+      --muted: #737373;
+      --card-bg: #171717;
+      --border: #262626;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    /* Header */
+    .brand {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 3rem;
+    }
+
+    .brand span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Hero */
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+    }
+
+    /* CTA */
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: opacity 0.2s;
+    }
+
+    .cta:hover {
+      opacity: 0.9;
+    }
+
+    .cta svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* What section */
+    .section {
+      margin-top: 4rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .card .tag {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+
+    .card .tag.medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+    }
+
+    /* How it works */
+    .steps {
+      counter-reset: step;
+    }
+
+    .step {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .step-content h3 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-content p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* Why me */
+    .personal {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+
+    .personal p {
+      margin-bottom: 1rem;
+    }
+
+    .personal p:last-child {
+      margin-bottom: 0;
+    }
+
+    .signature {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--text);
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .container {
+        padding: 2rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">
+      <span>CodeExplorer</span> / Security
+    </div>
+
+    <h1>Free security check for your website</h1>
+
+    <p class="subtitle">
+      I scan indie projects and explain issues in plain English.
+      No jargon. No sales pitch. Just one developer helping another.
+    </p>
+
+    <a href="https://x.com/CodeExplorerHQ" class="cta" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      Message me on X
+    </a>
+
+    <section class="section">
+      <h2>What I check</h2>
+
+      <div class="card">
+        <span class="tag">Common issue</span>
+        <h3>Email spoofing protection</h3>
+        <p>Can someone send emails pretending to be you? 80% of indie sites are missing this one-line DNS fix.</p>
+      </div>
+
+      <div class="card">
+        <span class="tag">Critical</span>
+        <h3>Exposed API keys</h3>
+        <p>Is your OpenAI, Stripe, or AWS key visible in your JavaScript? Attackers scan for these constantly.</p>
+      </div>
+
+      <div class="card">
+        <span class="tag medium">Best practice</span>
+        <h3>Security headers</h3>
+        <p>Are your browser protections enabled? Things like forcing HTTPS and preventing clickjacking.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>How it works</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Send me your URL</h3>
+            <p>DM me on X with your website link</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>I run the scan</h3>
+            <p>Takes about a minute. I check headers, DNS, exposed files, and more.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>You get a friendly report</h3>
+            <p>Plain English explanations. What matters, what doesn't, and how to fix it.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Why I do this</h2>
+
+      <div class="personal">
+        <p>
+          I'm a developer who got into security because I kept seeing the same issues
+          on indie projects. Missing SPF records. Exposed API keys. Easy fixes that
+          most people don't know about.
+        </p>
+        <p>
+          The existing security tools are either too technical or too corporate.
+          They give you a list of 47 "vulnerabilities" without explaining what actually matters.
+        </p>
+        <p>
+          I wanted something different. A quick scan, plain English results, and a
+          real person you can ask questions to.
+        </p>
+        <p class="signature">
+          — That's it. No upsell. Just trying to help fellow builders ship more securely.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://x.com/CodeExplorerHQ">@CodeExplorerHQ</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

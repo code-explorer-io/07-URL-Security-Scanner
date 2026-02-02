@@ -14,19 +14,18 @@
 
 ## Next Priority: Landing Page
 
-Simple site to give the project legitimacy.
+**Status:** Draft created in `site/index.html`
 
-**Requirements:**
-- Single page, clean design
-- Explains what we do in plain English
-- "Get a free security check" -> Connect via X
-- MUST pass our own scanner with Grade A
+**To deploy:**
+1. Host on Vercel/Netlify/GitHub Pages
+2. Scan our own site - must get Grade A
+3. Add proper security headers in hosting config
 
-**Content:**
-1. Hero: "Free Security Checks for Vibe Coders"
-2. What we check (SPF, API keys, headers)
-3. How it works (Drop URL -> We scan -> Friendly report)
-4. Connect on X: @[handle]
+**Features:**
+- Single page, dark theme, mobile responsive
+- Personal tone - "one developer helping another"
+- Explains checks in beginner language
+- CTA: DM on X (@CodeExplorerHQ)
 
 ---
 
