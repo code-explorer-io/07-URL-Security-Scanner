@@ -10,7 +10,7 @@ Security scanner for vibe coders. Scan websites, find issues, DM the developer, 
 
 ## Current State
 
-- **Version:** 2.1 (red-teamed 3x, improved)
+- **Version:** 2.2 (two-phase scan, red-teamed 4x)
 - **Scans completed:** 2 (GlowHub, CodeExplorer)
 - **Connections made:** 1 (GlowHub responded positively)
 

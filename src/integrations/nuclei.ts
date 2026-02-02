@@ -20,14 +20,15 @@ import * as fs from 'fs';
 
 // Check for local Nuclei installation in tools/ directory
 function getNucleiPath(): string {
+  // Determine the correct executable name based on platform
+  const exeName = process.platform === 'win32' ? 'nuclei.exe' : 'nuclei';
+
   // Try multiple possible locations
   const possiblePaths = [
     // From dist/integrations/ -> tools/
-    path.join(__dirname, '../../tools/nuclei.exe'),
+    path.join(__dirname, '../../tools', exeName),
     // From project root
-    path.join(process.cwd(), 'tools/nuclei.exe'),
-    // Absolute fallback
-    'C:\\Users\\Code Explorer\\Documents\\GitHub\\07-URL-Security-Scanner\\tools\\nuclei.exe'
+    path.join(process.cwd(), 'tools', exeName)
   ];
 
   for (const p of possiblePaths) {

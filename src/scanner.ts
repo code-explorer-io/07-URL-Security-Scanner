@@ -60,10 +60,10 @@ export async function scanUrl(options: ExtendedScanOptions): Promise<ExtendedSca
   let checkNum = 1;
   if (verbose) console.log(`  [${checkNum}/${totalChecks}] Fetching main page...`);
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+  try {
     const mainResponse = await fetch(normalizedUrl, {
       method: 'GET',
       signal: controller.signal,
@@ -73,12 +73,13 @@ export async function scanUrl(options: ExtendedScanOptions): Promise<ExtendedSca
       }
     });
 
-    clearTimeout(timeoutId);
     mainHeaders = mainResponse.headers;
     mainHtml = await mainResponse.text();
     if (verbose) console.log('      Done');
   } catch (error) {
     console.error(`Failed to fetch ${normalizedUrl}:`, error instanceof Error ? error.message : 'Unknown error');
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   // Step 2: Security headers

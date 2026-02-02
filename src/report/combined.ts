@@ -442,7 +442,7 @@ export function createCombinedResult(
     },
     external: {
       observatory,
-      nuclei: nucleiFindings.length > 0 || nucleiFindings !== undefined ? {
+      nuclei: nucleiFindings && nucleiFindings.length > 0 ? {
         findings: nucleiFindings,
         duration: undefined
       } : undefined,
