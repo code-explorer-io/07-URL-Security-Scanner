@@ -7,20 +7,20 @@
   <meta name="description" content="Get a free, friendly security check for your website. No jargon, just plain English explanations of what matters.">
   <style>
     :root {
-      --bg: #09090b;
-      --surface: #18181b;
-      --surface-hover: #27272a;
-      --border: #27272a;
-      --text: #fafafa;
-      --text-muted: #a1a1aa;
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.15);
-      --red: #ef4444;
-      --red-bg: rgba(239, 68, 68, 0.1);
-      --orange: #f97316;
-      --orange-bg: rgba(249, 115, 22, 0.1);
-      --green: #22c55e;
-      --green-bg: rgba(34, 197, 94, 0.1);
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --surface-hover: #f4f4f5;
+      --border: #e4e4e7;
+      --text: #18181b;
+      --text-muted: #71717a;
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.15);
+      --red: #dc2626;
+      --red-bg: rgba(220, 38, 38, 0.08);
+      --orange: #ea580c;
+      --orange-bg: rgba(234, 88, 12, 0.08);
+      --green: #16a34a;
+      --green-bg: rgba(22, 163, 74, 0.08);
     }
 
     * {
@@ -37,7 +37,7 @@
       min-height: 100vh;
     }
 
-    /* Subtle grid background */
+    /* Subtle gradient background */
     body::before {
       content: '';
       position: fixed;
@@ -45,10 +45,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-      background-size: 60px 60px;
+      background: radial-gradient(ellipse at top, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
       pointer-events: none;
       z-index: -1;
     }
@@ -78,7 +75,6 @@
       height: 8px;
       background: var(--green);
       border-radius: 50%;
-      box-shadow: 0 0 12px var(--green);
     }
 
     /* Hero */
@@ -88,7 +84,7 @@
       line-height: 1.1;
       letter-spacing: -0.03em;
       margin-bottom: 1.5rem;
-      background: linear-gradient(to bottom right, #fff 30%, #71717a);
+      background: linear-gradient(135deg, #18181b 0%, #3f3f46 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -154,11 +150,12 @@
       border-radius: 16px;
       padding: 1.5rem;
       transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
     .card:hover {
-      background: var(--surface-hover);
-      border-color: #3f3f46;
+      border-color: #d4d4d8;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
 
     .card-header {
@@ -227,7 +224,7 @@
       flex-shrink: 0;
       width: 36px;
       height: 36px;
-      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
       display: flex;
@@ -235,7 +232,7 @@
       justify-content: center;
       font-weight: 700;
       font-size: 0.9rem;
-      color: var(--text-muted);
+      color: var(--accent);
     }
 
     .step h3 {
@@ -251,12 +248,13 @@
 
     /* Personal section */
     .personal {
-      background: linear-gradient(135deg, var(--surface) 0%, rgba(24,24,27,0.5) 100%);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 2.5rem;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
     }
 
     .personal::before {
@@ -265,8 +263,9 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), #8b5cf6);
+      border-radius: 20px 20px 0 0;
     }
 
     .personal p {
