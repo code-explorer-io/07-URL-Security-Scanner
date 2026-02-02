@@ -331,11 +331,11 @@ export function generateDmMessage(
 
   // Medium-impact issues get beginner-friendly explanation
   if (mediumImpact.length > 0) {
-    // If we already have high-impact, be brief with medium
+    // If we already have high-impact, add brief explanation for medium
     if (highImpact.length > 0) {
       lines.push('');
       for (const item of mediumImpact.slice(0, 2)) {
-        lines.push(`${issueNum}. ${item.explanation.term}`);
+        lines.push(`${issueNum}. ${item.explanation.term} - ${item.explanation.bad}`);
         issueNum++;
       }
     } else {
