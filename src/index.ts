@@ -7,7 +7,7 @@ import { createGist, isGhAvailable } from './integrations/gist';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const VERSION = '2.0.0';
+const VERSION = '2.4.0';
 
 const HELP_TEXT = `
 ╔═══════════════════════════════════════════════════════════════════╗
@@ -278,6 +278,112 @@ function showStats(): void {
   console.log('');
 }
 
+interface PreviousScan {
+  domain: string;
+  scannedAt: string;
+  grade: string;
+  score: number;
+  summary: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+  };
+  issues: Array<{ title: string; severity: string; category: string }>;
+  topIssue: string;
+}
+
+interface ScanComparison {
+  hasPrevious: boolean;
+  previousScan?: PreviousScan;
+  gradeChange?: 'improved' | 'declined' | 'unchanged';
+  scoreChange?: number;
+  issuesFixed?: string[];
+  newIssues?: string[];
+  summaryText?: string;
+}
+
+/**
+ * Load previous scan for a domain and compare with current results
+ */
+function compareToPreviousScan(
+  domain: string,
+  currentGrade: string,
+  currentScore: number,
+  currentIssues: Array<{ title: string; severity: string; category: string }>
+): ScanComparison {
+  const scanPath = path.resolve('scans', `${domain}.json`);
+
+  if (!fs.existsSync(scanPath)) {
+    return { hasPrevious: false };
+  }
+
+  try {
+    const previousData = JSON.parse(fs.readFileSync(scanPath, 'utf-8')) as PreviousScan;
+
+    // Calculate grade change
+    const gradeOrder: Record<string, number> = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'F': 1 };
+    const previousGradeValue = gradeOrder[previousData.grade] || 0;
+    const currentGradeValue = gradeOrder[currentGrade] || 0;
+
+    let gradeChange: 'improved' | 'declined' | 'unchanged';
+    if (currentGradeValue > previousGradeValue) {
+      gradeChange = 'improved';
+    } else if (currentGradeValue < previousGradeValue) {
+      gradeChange = 'declined';
+    } else {
+      gradeChange = 'unchanged';
+    }
+
+    // Calculate score change
+    const scoreChange = currentScore - previousData.score;
+
+    // Find fixed and new issues
+    const previousTitles = new Set(previousData.issues.map(i => i.title));
+    const currentTitles = new Set(currentIssues.map(i => i.title));
+
+    const issuesFixed = previousData.issues
+      .filter(i => !currentTitles.has(i.title))
+      .map(i => i.title);
+
+    const newIssues = currentIssues
+      .filter(i => !previousTitles.has(i.title))
+      .map(i => i.title);
+
+    // Generate summary text
+    let summaryText = '';
+    if (gradeChange === 'improved') {
+      summaryText = `📈 Grade improved: ${previousData.grade} → ${currentGrade} (+${scoreChange} points)`;
+    } else if (gradeChange === 'declined') {
+      summaryText = `📉 Grade declined: ${previousData.grade} → ${currentGrade} (${scoreChange} points)`;
+    } else if (scoreChange !== 0) {
+      summaryText = `📊 Grade unchanged (${currentGrade}), score ${scoreChange > 0 ? '+' : ''}${scoreChange} points`;
+    } else {
+      summaryText = `📊 No change since last scan (Grade ${currentGrade})`;
+    }
+
+    if (issuesFixed.length > 0) {
+      summaryText += `\n   ✅ Fixed ${issuesFixed.length} issue(s): ${issuesFixed.slice(0, 3).join(', ')}${issuesFixed.length > 3 ? '...' : ''}`;
+    }
+    if (newIssues.length > 0) {
+      summaryText += `\n   ⚠️  ${newIssues.length} new issue(s): ${newIssues.slice(0, 3).join(', ')}${newIssues.length > 3 ? '...' : ''}`;
+    }
+
+    return {
+      hasPrevious: true,
+      previousScan: previousData,
+      gradeChange,
+      scoreChange,
+      issuesFixed,
+      newIssues,
+      summaryText
+    };
+  } catch {
+    return { hasPrevious: false };
+  }
+}
+
 /**
  * Save scan data for pattern analysis
  * This builds our internal database to generate stats like "80% miss SPF"
@@ -372,6 +478,8 @@ async function handleOutreachMode(
   const externalResults = await runExternalScans(domain, {
     observatory: true,
     nuclei: true,
+    crtsh: true,
+    subdomainTakeover: true,
     techStack,
     verbose: true
   });
@@ -383,6 +491,24 @@ async function handleOutreachMode(
     info: { name: string; severity: string; description?: string };
     matched: string;
   }>) || [];
+
+  // Merge subdomain takeover issues into main result
+  if (externalResults.subdomainTakeoverResult && externalResults.subdomainTakeoverResult.issues.length > 0) {
+    // Add as a new check result
+    result.checks.push(externalResults.subdomainTakeoverResult);
+    // Update summary counts
+    for (const issue of externalResults.subdomainTakeoverResult.issues) {
+      if (issue.severity === 'critical') result.summary.critical++;
+      else if (issue.severity === 'high') result.summary.high++;
+      else if (issue.severity === 'medium') result.summary.medium++;
+      else if (issue.severity === 'low') result.summary.low++;
+      result.summary.total++;
+    }
+    result.summary.failed++;
+    // Recalculate score with new issues
+    score = calculateScore(result, result.techStack);
+    console.log(`   ⚠️  Subdomain Takeover: ${externalResults.subdomainTakeoverResult.issues.length} vulnerable subdomain(s) found!`);
+  }
 
   console.log('');
   console.log('   External validation complete!');
@@ -396,6 +522,26 @@ async function handleOutreachMode(
     console.log('   ⚠️  Nuclei: Not installed (install for deeper scanning)');
   } else if (!nucleiResult) {
     console.log('   ⚠️  Nuclei: FAILED to run');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // COMPARE WITH PREVIOUS SCAN
+  // ═══════════════════════════════════════════════════════════════════
+  const allIssues = result.checks.flatMap(c => c.issues).map(i => ({
+    title: i.title,
+    severity: i.severity,
+    category: i.category
+  }));
+  const comparison = compareToPreviousScan(domain, score.grade, score.score, allIssues);
+
+  if (comparison.hasPrevious && comparison.summaryText) {
+    console.log('');
+    console.log('╔═══════════════════════════════════════════════════════════════════╗');
+    console.log('║                    Comparison with Previous Scan                  ║');
+    console.log('╚═══════════════════════════════════════════════════════════════════╝');
+    console.log('');
+    console.log(`   ${comparison.summaryText.split('\n').join('\n   ')}`);
+    console.log('');
   }
 
   // ═══════════════════════════════════════════════════════════════════

@@ -17,23 +17,28 @@
 - [x] Google PageSpeed (optional, slow)
 - [x] Manual check links: VirusTotal, Shodan, SecurityHeaders.com
 
-### Quality Improvements (v2.3 - this session)
+### Quality Improvements (v2.3)
 - [x] **Severity recalibration** - HSTS downgraded to MEDIUM (honest about real-world impact)
 - [x] **"Not Checked" disclaimers** - Prominent section explaining what we can't test
 - [x] **Tech detection accuracy** - Fixed false positives (WordPress/Webflow/Ghost on tool sites)
 - [x] **Parallel external scans** - All APIs run concurrently for speed
 - [x] **DM honesty** - Adds "(mostly best-practice headers)" when only finding header issues
 
+### New Features (v2.4)
+- [x] **More API key patterns** - Added Postmark detection (Twilio, SendGrid, Mailgun already existed)
+- [x] **Subdomain takeover detection** - Uses crt.sh subdomains to check for dangling CNAMEs to 18+ cloud services
+- [x] **Re-scan comparison** - "Last scan: Grade D → This scan: Grade C - improved!" with issues fixed/added
+
 ---
 
 ## Future Ideas
 
 ### High Value / Low Effort
-| Feature | Why |
-|---------|-----|
-| **More API key patterns** | Twilio, SendGrid, Mailgun, Postmark - common for vibe coders |
-| **Subdomain takeover check** | crt.sh gives us subdomains, check if they resolve to dangling CNAMEs |
-| **Re-scan comparison** | "Last scan: Grade D → This scan: Grade C - improved!" |
+| Feature | Status |
+|---------|--------|
+| ~~More API key patterns~~ | ✅ Done in v2.4 |
+| ~~Subdomain takeover check~~ | ✅ Done in v2.4 |
+| ~~Re-scan comparison~~ | ✅ Done in v2.4 |
 
 ### High Value / Medium Effort
 | Feature | Why |

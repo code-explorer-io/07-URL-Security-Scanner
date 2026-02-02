@@ -165,6 +165,16 @@ const API_KEY_PATTERNS: ApiKeyPattern[] = [
     fix: 'Move to server-side environment variable.',
     confidence: 'high'
   },
+  // Postmark
+  {
+    name: 'Postmark Server Token',
+    service: 'Postmark',
+    pattern: /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g,
+    severity: 'high',
+    description: 'Possible Postmark server token found (UUID format). Allows sending emails from your account.',
+    fix: 'Move to server-side environment variable. Never expose email API tokens in frontend.',
+    confidence: 'medium'
+  },
   // Resend (popular with vibe coders)
   {
     name: 'Resend API Key',

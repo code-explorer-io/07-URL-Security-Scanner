@@ -5,6 +5,9 @@
  * All tools here are FREE and don't require payment.
  */
 
+import { checkSubdomainTakeovers } from '../checks/subdomain-takeover';
+import { CheckResult } from '../types';
+
 export interface ExternalScanResult {
   source: string;
   grade?: string;
@@ -439,6 +442,7 @@ export async function runExternalScans(
     crtsh?: boolean;
     urlscan?: boolean;
     pagespeed?: boolean;
+    subdomainTakeover?: boolean;
     techStack?: string[];
     verbose?: boolean;
   } = {}
@@ -446,6 +450,7 @@ export async function runExternalScans(
   results: ExternalScanResult[];
   links: { name: string; url: string }[];
   nucleiAvailable?: boolean;
+  subdomainTakeoverResult?: CheckResult;
 }> {
   const {
     observatory = true,
@@ -454,11 +459,14 @@ export async function runExternalScans(
     crtsh = true,
     urlscan = true,
     pagespeed = false, // Disabled by default as it's slow (~10s)
+    subdomainTakeover = true, // Check for subdomain takeover using crt.sh data
     verbose = false
   } = options;
   const results: ExternalScanResult[] = [];
   const links: { name: string; url: string }[] = [];
   let nucleiAvailable: boolean | undefined;
+  let subdomainTakeoverResult: CheckResult | undefined;
+  let discoveredSubdomains: string[] = [];
 
   // Always add manual check links
   links.push({
@@ -514,8 +522,10 @@ export async function runExternalScans(
       const crtResult = await scanCertificateTransparency(hostname);
       if (crtResult) {
         results.push(crtResult);
+        // Store subdomains for takeover checks
+        const details = crtResult.details as { uniqueSubdomains?: string[]; totalSubdomains?: number };
+        discoveredSubdomains = details.uniqueSubdomains || [];
         if (verbose) {
-          const details = crtResult.details as { totalSubdomains?: number };
           console.log(`    crt.sh: Found ${details.totalSubdomains || 0} subdomains`);
         }
       }
@@ -569,6 +579,25 @@ export async function runExternalScans(
   // Wait for all parallel scans to complete
   await Promise.all(scanPromises);
 
+  // Run subdomain takeover check if enabled and we have subdomains from crt.sh
+  if (subdomainTakeover && discoveredSubdomains.length > 0) {
+    if (verbose) console.log(`  Checking ${Math.min(discoveredSubdomains.length, 10)} subdomains for takeover vulnerabilities...`);
+    try {
+      subdomainTakeoverResult = await checkSubdomainTakeovers(discoveredSubdomains, 10);
+      if (subdomainTakeoverResult.issues.length > 0) {
+        if (verbose) {
+          console.log(`    ⚠️ Found ${subdomainTakeoverResult.issues.length} potential subdomain takeover(s)!`);
+        }
+      } else if (verbose) {
+        console.log('    No subdomain takeover vulnerabilities found');
+      }
+    } catch (error) {
+      if (verbose) {
+        console.log(`    Subdomain takeover check error: ${error instanceof Error ? error.message : 'Unknown'}`);
+      }
+    }
+  }
+
   // Run Nuclei scan if enabled (requires local installation) - sequential as it's heavy
   if (nuclei) {
     try {
@@ -613,7 +642,7 @@ export async function runExternalScans(
     }
   }
 
-  return { results, links, nucleiAvailable };
+  return { results, links, nucleiAvailable, subdomainTakeoverResult };
 }
 
 /**
