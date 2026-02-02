@@ -7,12 +7,20 @@
   <meta name="description" content="Get a free, friendly security check for your website. No jargon, just plain English explanations of what matters.">
   <style>
     :root {
-      --bg: #0a0a0a;
-      --text: #e5e5e5;
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-hover: #27272a;
+      --border: #27272a;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
       --accent: #3b82f6;
-      --muted: #737373;
-      --card-bg: #171717;
-      --border: #262626;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.1);
+      --orange: #f97316;
+      --orange-bg: rgba(249, 115, 22, 0.1);
+      --green: #22c55e;
+      --green-bg: rgba(34, 197, 94, 0.1);
     }
 
     * {
@@ -22,182 +30,277 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.7;
       min-height: 100vh;
     }
 
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
     .container {
-      max-width: 680px;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 3rem 1.5rem;
+      padding: 4rem 2rem;
     }
 
-    /* Header */
+    /* Brand */
     .brand {
-      font-size: 0.9rem;
-      color: var(--muted);
-      margin-bottom: 3rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 4rem;
+      padding: 0.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
     }
 
-    .brand span {
-      color: var(--text);
-      font-weight: 600;
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--green);
     }
 
     /* Hero */
     h1 {
-      font-size: 2.5rem;
+      font-size: clamp(2.5rem, 6vw, 3.5rem);
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
       margin-bottom: 1.5rem;
+      background: linear-gradient(to bottom right, #fff 30%, #71717a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
       font-size: 1.25rem;
-      color: var(--muted);
-      margin-bottom: 2.5rem;
+      color: var(--text-muted);
+      margin-bottom: 3rem;
+      max-width: 540px;
     }
 
-    /* CTA */
+    /* CTA Button */
     .cta {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       background: var(--accent);
       color: white;
-      padding: 1rem 2rem;
-      border-radius: 8px;
+      padding: 1rem 1.75rem;
+      border-radius: 12px;
       text-decoration: none;
       font-weight: 600;
-      font-size: 1.1rem;
-      transition: opacity 0.2s;
+      font-size: 1rem;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .cta:hover {
-      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--accent-glow), 0 8px 20px rgba(0,0,0,0.4);
     }
 
     .cta svg {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
     }
 
-    /* What section */
+    /* Sections */
     .section {
-      margin-top: 4rem;
+      margin-top: 6rem;
     }
 
     h2 {
-      font-size: 1.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
       margin-bottom: 1.5rem;
     }
 
+    /* Cards */
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
     .card {
-      background: var(--card-bg);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 1.5rem;
-      margin-bottom: 1rem;
+      transition: all 0.2s;
     }
 
-    .card h3 {
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
+    .card:hover {
+      background: var(--surface-hover);
+      border-color: #3f3f46;
     }
 
-    .card p {
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .card .tag {
-      display: inline-block;
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       margin-bottom: 0.75rem;
     }
 
-    .card .tag.medium {
-      background: rgba(245, 158, 11, 0.15);
-      color: #f59e0b;
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
     }
 
-    /* How it works */
+    .card-icon.red { background: var(--red-bg); }
+    .card-icon.orange { background: var(--orange-bg); }
+    .card-icon.green { background: var(--green-bg); }
+
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    .tag.red { background: var(--red-bg); color: var(--red); }
+    .tag.orange { background: var(--orange-bg); color: var(--orange); }
+
+    /* Steps */
     .steps {
-      counter-reset: step;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
 
     .step {
       display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+      gap: 1.25rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step:last-child {
+      border-bottom: none;
     }
 
     .step-num {
       flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      background: var(--card-bg);
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-hover) 100%);
       border: 1px solid var(--border);
-      border-radius: 50%;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.9rem;
+      color: var(--text-muted);
     }
 
-    .step-content h3 {
+    .step h3 {
       font-size: 1rem;
+      font-weight: 600;
       margin-bottom: 0.25rem;
     }
 
-    .step-content p {
-      color: var(--muted);
+    .step p {
+      color: var(--text-muted);
       font-size: 0.9rem;
     }
 
-    /* Why me */
+    /* Personal section */
     .personal {
-      background: var(--card-bg);
+      background: linear-gradient(135deg, var(--surface) 0%, rgba(24,24,27,0.5) 100%);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 2rem;
-      margin-top: 2rem;
+      border-radius: 20px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .personal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
     }
 
     .personal p {
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
+      color: var(--text-muted);
+    }
+
+    .personal p:first-child {
+      color: var(--text);
+      font-size: 1.1rem;
     }
 
     .personal p:last-child {
       margin-bottom: 0;
-    }
-
-    .signature {
-      color: var(--muted);
+      color: var(--text);
       font-style: italic;
     }
 
     /* Footer */
     footer {
-      margin-top: 4rem;
+      margin-top: 6rem;
       padding-top: 2rem;
       border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
     }
 
     footer a {
-      color: var(--muted);
+      color: var(--text-muted);
       text-decoration: none;
+      transition: color 0.2s;
     }
 
     footer a:hover {
@@ -205,13 +308,23 @@
     }
 
     /* Responsive */
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2rem;
+    @media (max-width: 640px) {
+      .container {
+        padding: 3rem 1.5rem;
       }
 
-      .container {
-        padding: 2rem 1rem;
+      .section {
+        margin-top: 4rem;
+      }
+
+      .personal {
+        padding: 1.5rem;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
       }
     }
   </style>
@@ -219,7 +332,8 @@
 <body>
   <div class="container">
     <div class="brand">
-      <span>CodeExplorer</span> / Security
+      <span class="brand-dot"></span>
+      CodeExplorer Security
     </div>
 
     <h1>Free security check for your website</h1>
@@ -235,34 +349,44 @@
     </a>
 
     <section class="section">
-      <h2>What I check</h2>
+      <h2>What I Check</h2>
 
-      <div class="card">
-        <span class="tag">Common issue</span>
-        <h3>Email spoofing protection</h3>
-        <p>Can someone send emails pretending to be you? 80% of indie sites are missing this one-line DNS fix.</p>
-      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon red">&#9993;</div>
+            <h3>Email spoofing protection</h3>
+            <span class="tag red">80% miss this</span>
+          </div>
+          <p>Can someone send emails pretending to be you? Most indie sites are missing this simple DNS fix.</p>
+        </div>
 
-      <div class="card">
-        <span class="tag">Critical</span>
-        <h3>Exposed API keys</h3>
-        <p>Is your OpenAI, Stripe, or AWS key visible in your JavaScript? Attackers scan for these constantly.</p>
-      </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon orange">&#128273;</div>
+            <h3>Exposed API keys</h3>
+            <span class="tag orange">Critical</span>
+          </div>
+          <p>Is your OpenAI, Stripe, or AWS key visible in your JavaScript? Attackers scan for these constantly.</p>
+        </div>
 
-      <div class="card">
-        <span class="tag medium">Best practice</span>
-        <h3>Security headers</h3>
-        <p>Are your browser protections enabled? Things like forcing HTTPS and preventing clickjacking.</p>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon green">&#128737;</div>
+            <h3>Security headers</h3>
+          </div>
+          <p>Are your browser protections enabled? Things like forcing HTTPS and preventing clickjacking.</p>
+        </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>How it works</h2>
+      <h2>How It Works</h2>
 
       <div class="steps">
         <div class="step">
           <div class="step-num">1</div>
-          <div class="step-content">
+          <div>
             <h3>Send me your URL</h3>
             <p>DM me on X with your website link</p>
           </div>
@@ -270,49 +394,44 @@
 
         <div class="step">
           <div class="step-num">2</div>
-          <div class="step-content">
-            <h3>I run the scan</h3>
-            <p>Takes about a minute. I check headers, DNS, exposed files, and more.</p>
+          <div>
+            <h3>I run a comprehensive scan</h3>
+            <p>Internal checks plus external validation tools. Headers, DNS, exposed files, vulnerability detection.</p>
           </div>
         </div>
 
         <div class="step">
           <div class="step-num">3</div>
-          <div class="step-content">
+          <div>
             <h3>You get a friendly report</h3>
-            <p>Plain English explanations. What matters, what doesn't, and how to fix it.</p>
+            <p>Plain English explanations. What matters, what doesn't, how to fix it.</p>
           </div>
         </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>Why I do this</h2>
+      <h2>Why I Do This</h2>
 
       <div class="personal">
         <p>
-          I'm a developer who got into security because I kept seeing the same issues
-          on indie projects. Missing SPF records. Exposed API keys. Easy fixes that
-          most people don't know about.
+          I kept seeing the same issues on indie projects. Missing SPF records. Exposed API keys. Easy fixes that most people don't know about.
         </p>
         <p>
-          The existing security tools are either too technical or too corporate.
-          They give you a list of 47 "vulnerabilities" without explaining what actually matters.
+          The existing security tools are either too technical or too corporate. They give you a list of 47 "vulnerabilities" without explaining what actually matters.
         </p>
         <p>
-          I wanted something different. A quick scan, plain English results, and a
-          real person you can ask questions to.
+          I wanted something different. A quick scan, plain English results, and a real person you can ask questions to.
         </p>
-        <p class="signature">
-          — That's it. No upsell. Just trying to help fellow builders ship more securely.
+        <p>
+          No upsell. Just trying to help fellow builders ship more securely.
         </p>
       </div>
     </section>
 
     <footer>
-      <p>
-        <a href="https://x.com/CodeExplorerHQ">@CodeExplorerHQ</a>
-      </p>
+      <span>CodeExplorer</span>
+      <a href="https://x.com/CodeExplorerHQ">@CodeExplorerHQ</a>
     </footer>
   </div>
 </body>
