@@ -70,6 +70,11 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
     details.hasMxRecords = false;
   }
 
+  // Determine severity based on whether domain sends email
+  // If no MX records, SPF/DMARC are less critical (domain doesn't send email)
+  const emailSeverity = details.hasMxRecords ? 'medium' : 'low';
+  const noEmailNote = details.hasMxRecords ? '' : ' (Your domain has no MX records, so this is lower priority.)';
+
   // Check SPF record
   try {
     const txtRecords = await resolveTxt(domain);
@@ -96,10 +101,10 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
       details.spf.exists = false;
       issues.push({
         id: 'dns-no-spf',
-        severity: 'medium',
+        severity: emailSeverity,
         category: 'Email Security',
         title: 'No SPF record found',
-        description: 'Without SPF, anyone can send emails pretending to be from your domain. This is like having no caller ID on your phone.',
+        description: `Without SPF, anyone can send emails pretending to be from your domain. This is like having no caller ID on your phone.${noEmailNote}`,
         fix: `Add a TXT record to your DNS: v=spf1 include:_spf.google.com ~all (adjust based on your email provider)`
       });
     }
@@ -107,10 +112,10 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
     // DNS lookup failed - might be no TXT records
     issues.push({
       id: 'dns-no-spf',
-      severity: 'medium',
+      severity: emailSeverity,
       category: 'Email Security',
       title: 'No SPF record found',
-      description: 'Without SPF, anyone can send emails pretending to be from your domain',
+      description: `Without SPF, anyone can send emails pretending to be from your domain${noEmailNote}`,
       fix: 'Add a TXT record to your DNS with your SPF policy'
     });
   }
@@ -141,10 +146,10 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
       details.dmarc.exists = false;
       issues.push({
         id: 'dns-no-dmarc',
-        severity: 'medium',
+        severity: emailSeverity,
         category: 'Email Security',
         title: 'No DMARC record found',
-        description: 'DMARC tells email servers what to do when SPF/DKIM checks fail. Without it, spoofed emails may still be delivered.',
+        description: `DMARC tells email servers what to do when SPF/DKIM checks fail. Without it, spoofed emails may still be delivered.${noEmailNote}`,
         fix: `Add a TXT record for _dmarc.${domain}: v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`
       });
     }
@@ -152,10 +157,10 @@ export async function checkDnsSecurity(url: string): Promise<CheckResult> {
     // No DMARC record
     issues.push({
       id: 'dns-no-dmarc',
-      severity: 'medium',
+      severity: emailSeverity,
       category: 'Email Security',
       title: 'No DMARC record found',
-      description: 'DMARC tells email servers what to do when SPF/DKIM checks fail. Without it, spoofed emails may still be delivered.',
+      description: `DMARC tells email servers what to do when SPF/DKIM checks fail. Without it, spoofed emails may still be delivered.${noEmailNote}`,
       fix: `Add a TXT record for _dmarc.${domain}: v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain}`
     });
   }

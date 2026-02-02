@@ -117,10 +117,14 @@ function prioritizeForDm(issues: SecurityIssue[]): SecurityIssue[] {
     'API Key Exposure': 1,
     // Email is easy to understand
     'Email Security': 2,
+    // SSL issues are tangible (browser warnings)
+    'SSL/TLS': 3,
     // Files are tangible
-    'Exposed Files': 3,
+    'Exposed Files': 4,
+    // CORS is more technical
+    'CORS': 5,
     // Headers are abstract - put last
-    'Security Headers': 4,
+    'Security Headers': 6,
   };
 
   return [...issues].sort((a, b) => {
@@ -147,15 +151,19 @@ export function generateDmMessage(
 
   // Get top issues, prioritized for understandability
   const prioritized = prioritizeForDm(allIssues);
-  const filtered = prioritized
-    .filter(i => i.severity === 'critical' || i.severity === 'high' || i.severity === 'medium');
 
-  // Separate high-impact issues from minor ones
+  // Separate by severity level
+  const significantIssues = prioritized.filter(i =>
+    i.severity === 'critical' || i.severity === 'high' || i.severity === 'medium'
+  );
+  const lowIssues = prioritized.filter(i => i.severity === 'low');
+
+  // Separate high-impact issues from minor ones (for significant issues)
   const highImpact: { issue: SecurityIssue; explanation: { short: string; risk: string } }[] = [];
   const minor: SecurityIssue[] = [];
   const seenCategories = new Set<string>();
 
-  for (const issue of filtered) {
+  for (const issue of significantIssues) {
     if (seenCategories.has(issue.category)) continue;
     seenCategories.add(issue.category);
 
@@ -175,11 +183,27 @@ export function generateDmMessage(
 
   // Handle clean sites (no significant issues)
   if (highImpact.length === 0 && minor.length === 0) {
-    lines.push(`Ran a quick security check (I do this for fun) and your site looks solid! SPF record set up, headers in place - you clearly know what you're doing.`);
+    // Check if there are only LOW severity issues
+    if (lowIssues.length > 0) {
+      lines.push(`Ran a quick security check (I do this for fun) - your site is looking solid!`);
+      lines.push('');
+      lines.push(`Just one small thing (really minor): ${getMinorIssueName(lowIssues[0])}. Easy 2-minute fix if you want to tighten things up.`);
+      if (lowIssues.length > 1) {
+        const otherLow = lowIssues.slice(1, 3).map(i => getMinorIssueName(i)).join(', ');
+        lines.push('');
+        lines.push(`Also spotted: ${otherLow} - but honestly these are just nice-to-haves.`);
+      }
+      lines.push('');
+      lines.push(`Happy to share the full details if you want them - us vibe coders gotta look out for each other!`);
+      return lines.join('\n');
+    }
+
+    // Truly clean - no issues at all
+    lines.push(`Ran a quick security check (I do this for fun) and didn't find any issues - nice work!`);
     lines.push('');
-    lines.push(`Just wanted to say nice work. Always cool to see someone shipping with security in mind.`);
+    lines.push(`Always cool to see someone shipping with security in mind.`);
     lines.push('');
-    lines.push(`Happy to help if you have questions - us vibe coders gotta look out for each other!`);
+    lines.push(`Happy to help if you ever have questions - us vibe coders gotta look out for each other!`);
     return lines.join('\n');
   }
 
@@ -212,8 +236,8 @@ export function generateDmMessage(
 
   lines.push('');
 
-  // Link and close
-  if (gistUrl) {
+  // Link and close (only show real gist URLs, not placeholder)
+  if (gistUrl && !gistUrl.includes('gist-url-here')) {
     lines.push(`Got a detailed report here if you want it: ${gistUrl}`);
   } else {
     lines.push(`Happy to share the full details if useful!`);

@@ -121,16 +121,10 @@ const API_KEY_PATTERNS: ApiKeyPattern[] = [
     fix: 'Move database access to backend. Frontend should never connect directly to databases.',
     confidence: 'high'
   },
-  // Supabase (common for vibe coders)
-  {
-    name: 'Supabase Service Role Key',
-    service: 'Supabase',
-    pattern: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g,
-    severity: 'high',
-    description: 'Possible Supabase service role key (JWT) found. Service role keys bypass Row Level Security.',
-    fix: 'Only use anon key in frontend. Service role key should only be used server-side.',
-    confidence: 'medium' // JWTs are common, may be false positive
-  },
+  // Supabase - Note: We can't reliably detect service role vs anon keys by pattern alone
+  // The anon key is MEANT to be public. Only flag if we see "service_role" in context.
+  // Removing this pattern to avoid false positives on legitimate anon keys.
+  // TODO: Add context-aware detection that looks for "service_role" string nearby
   // Firebase (checking for private key patterns)
   {
     name: 'Firebase Private Key',
@@ -182,10 +176,12 @@ const API_KEY_PATTERNS: ApiKeyPattern[] = [
     confidence: 'high'
   },
   // Clerk (auth service popular with vibe coders)
+  // Note: Clerk uses sk_live_/sk_test_ like Stripe, but their keys are longer (40+ chars)
+  // and Stripe keys are typically 24-32 chars. We use a minimum of 40 to avoid overlap.
   {
     name: 'Clerk Secret Key',
     service: 'Clerk',
-    pattern: /sk_(?:live|test)_[a-zA-Z0-9]{24,}/g,
+    pattern: /sk_(?:live|test)_[a-zA-Z0-9]{40,}/g,
     severity: 'critical',
     description: 'Clerk secret key found. This gives full access to your auth system.',
     fix: 'Only use Clerk publishable keys (pk_) in frontend. Secret keys go server-side.',
@@ -232,10 +228,11 @@ const API_KEY_PATTERNS: ApiKeyPattern[] = [
     confidence: 'high'
   },
   // Convex (realtime DB popular with vibe coders)
+  // Only match if it looks like a real Convex URL pattern with pipe separator
   {
     name: 'Convex Deploy Key',
     service: 'Convex',
-    pattern: /prod:[a-zA-Z0-9|]+/g,
+    pattern: /prod:[a-zA-Z0-9]{10,}\|[a-zA-Z0-9]{10,}/g,
     severity: 'high',
     description: 'Possible Convex deploy key found.',
     fix: 'Convex deploy keys should only be in CI/CD, not in frontend code.',

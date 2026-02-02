@@ -341,9 +341,79 @@ async function handleOutreachMode(
 ): Promise<void> {
   const domain = new URL(result.url).hostname;
 
-  // Generate reports
-  const humanReport = generateHumanReport(result, score, result.techStack);
-  const agentReport = generateAgentReport(result, score, result.techStack);
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 1: Internal Scan Complete (passed in as result)
+  // ═══════════════════════════════════════════════════════════════════
+  console.log('');
+  console.log('╔═══════════════════════════════════════════════════════════════════╗');
+  console.log('║                    PHASE 1: Internal Scan                         ║');
+  console.log('╚═══════════════════════════════════════════════════════════════════╝');
+  console.log('');
+  console.log(`   Grade: ${score.grade} (${score.score}/100)`);
+  console.log(`   Issues: ${result.summary.critical} critical, ${result.summary.high} high, ${result.summary.medium} medium`);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 2: External Tool Validation
+  // ═══════════════════════════════════════════════════════════════════
+  console.log('');
+  console.log('╔═══════════════════════════════════════════════════════════════════╗');
+  console.log('║                    PHASE 2: External Validation                   ║');
+  console.log('╚═══════════════════════════════════════════════════════════════════╝');
+  console.log('');
+
+  // Import external scanner module
+  const { runExternalScans } = await import('./integrations/external-scanners');
+
+  // Get tech stack for targeted Nuclei scanning
+  const techStack = result.techStack?.detected?.map(t => t.name) || [];
+
+  // Run external scans
+  console.log('   Running external validation tools...');
+  const externalResults = await runExternalScans(domain, {
+    observatory: true,
+    nuclei: true,
+    techStack,
+    verbose: true
+  });
+
+  // Extract Nuclei findings (type is inferred from the module)
+  const nucleiResult = externalResults.results.find(r => r.source === 'Nuclei');
+  const nucleiFindings = (nucleiResult?.details?.findings as Array<{
+    templateId: string;
+    info: { name: string; severity: string; description?: string };
+    matched: string;
+  }>) || [];
+
+  console.log('');
+  console.log('   External validation complete!');
+  if (externalResults.nucleiAvailable === false) {
+    console.log('   (Nuclei not available - install for deeper scanning)');
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // COMBINE RESULTS & GENERATE REPORTS
+  // ═══════════════════════════════════════════════════════════════════
+  console.log('');
+  console.log('╔═══════════════════════════════════════════════════════════════════╗');
+  console.log('║                    Generating Combined Reports                    ║');
+  console.log('╚═══════════════════════════════════════════════════════════════════╝');
+  console.log('');
+
+  // Import combined report generator
+  const { createCombinedResult, generateCombinedReports } = await import('./report/combined');
+
+  // Create combined result
+  const combined = createCombinedResult(
+    result,
+    score,
+    externalResults.results,
+    nucleiFindings,
+    externalResults.links,
+    result.techStack
+  );
+
+  // Generate both reports
+  const reports = generateCombinedReports(combined, projectName);
 
   // Create output directory
   const outputDir = path.resolve('outputs');
@@ -352,18 +422,14 @@ async function handleOutreachMode(
   }
 
   // Save reports locally
-  const humanPath = path.join(outputDir, `report-human-${domain}.md`);
-  const agentPath = path.join(outputDir, `report-agent-${domain}.md`);
+  const summaryPath = path.join(outputDir, `executive-summary-${domain}.md`);
+  const agentPath = path.join(outputDir, `agent-report-${domain}.md`);
 
-  fs.writeFileSync(humanPath, humanReport, 'utf-8');
-  fs.writeFileSync(agentPath, agentReport, 'utf-8');
+  fs.writeFileSync(summaryPath, reports.executiveSummary, 'utf-8');
+  fs.writeFileSync(agentPath, reports.agentReport, 'utf-8');
 
-  if (verbose) {
-    console.log('');
-    console.log('📄 Reports generated:');
-    console.log(`   ${humanPath}`);
-    console.log(`   ${agentPath}`);
-  }
+  console.log('   📄 Executive Summary (for the person)');
+  console.log('   📋 Agent Report (for their AI assistant)');
 
   // Upload to gist if requested
   let gistUrl = '[gist-url-here]';
@@ -380,7 +446,7 @@ async function handleOutreachMode(
       console.log('');
       console.log('Reports saved locally. Create gist manually at: https://gist.github.com');
     } else {
-      const gistResult = await createGist(humanReport, agentReport, domain);
+      const gistResult = await createGist(reports.executiveSummary, reports.agentReport, domain);
       if (gistResult) {
         gistUrl = gistResult.url;
         console.log(`✅ Gist created: ${gistUrl}`);
@@ -399,17 +465,22 @@ async function handleOutreachMode(
   // Save scan history for pattern analysis
   saveScanHistory(result, score, gistUrl);
 
-  // Print summary
+  // ═══════════════════════════════════════════════════════════════════
+  // FINAL SUMMARY
+  // ═══════════════════════════════════════════════════════════════════
   console.log('');
   console.log('═'.repeat(67));
   console.log('');
   console.log(`🎯 Outreach Package Ready for: ${domain}`);
   console.log('');
-  console.log(`   Grade: ${score.grade} (${score.score}/100)`);
-  console.log(`   Issues: ${result.summary.critical} critical, ${result.summary.high} high, ${result.summary.medium} medium`);
+  console.log('┌─────────────────────────────────────────────────────────────────┐');
+  console.log(`│  Grade: ${score.grade} (${score.score}/100)                                            │`);
+  console.log(`│  Phase 1 Issues: ${result.summary.total} total                                       │`);
+  console.log(`│  Phase 2 Validation: ${combined.analysis.confidence} confidence                           │`);
+  console.log('└─────────────────────────────────────────────────────────────────┘');
   console.log('');
   console.log('📁 Files generated:');
-  console.log(`   ${humanPath}`);
+  console.log(`   ${summaryPath}`);
   console.log(`   ${agentPath}`);
   console.log(`   ${dmPath}`);
   console.log('');
@@ -419,10 +490,14 @@ async function handleOutreachMode(
     console.log('');
   }
 
+  // Show DM message
   console.log('📨 DM Message (copy this):');
   console.log('─'.repeat(40));
   console.log(dmContent.message);
   console.log('─'.repeat(40));
+  console.log('');
+  console.log('💡 Tell them: "The Executive Summary is for you.');
+  console.log('   The Agent Report is for your AI assistant to fix the issues."');
   console.log('');
 }
 

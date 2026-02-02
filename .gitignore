@@ -25,3 +25,7 @@ npm-debug.log*
 outputs/*.md
 outputs/*.txt
 !outputs/.gitkeep
+
+# External tools (download locally, don't commit binaries)
+tools/
+!tools/.gitkeep

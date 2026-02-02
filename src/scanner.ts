@@ -69,7 +69,7 @@ export async function scanUrl(options: ExtendedScanOptions): Promise<ExtendedSca
       signal: controller.signal,
       redirect: 'follow',
       headers: {
-        'User-Agent': 'SecurityScanner/2.0 (Security Audit; https://github.com/code-explorer-io)'
+        'User-Agent': 'SecurityScanner/2.0 (Security Audit)'
       }
     });
 

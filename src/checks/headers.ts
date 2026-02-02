@@ -13,7 +13,7 @@ const SECURITY_HEADERS: HeaderCheck[] = [
   {
     name: 'Content-Security-Policy',
     header: 'content-security-policy',
-    severity: 'high',
+    severity: 'medium',  // Lowered from high - many legitimate sites don't have CSP, harder to configure correctly
     description: 'CSP prevents XSS attacks by controlling which resources can be loaded',
     fix: "Add header: Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
   },
