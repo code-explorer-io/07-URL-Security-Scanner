@@ -165,16 +165,10 @@ const API_KEY_PATTERNS: ApiKeyPattern[] = [
     fix: 'Move to server-side environment variable.',
     confidence: 'high'
   },
-  // Postmark
-  {
-    name: 'Postmark Server Token',
-    service: 'Postmark',
-    pattern: /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g,
-    severity: 'high',
-    description: 'Possible Postmark server token found (UUID format). Allows sending emails from your account.',
-    fix: 'Move to server-side environment variable. Never expose email API tokens in frontend.',
-    confidence: 'medium'
-  },
+  // Postmark - removed generic UUID pattern due to high false positive rate
+  // UUIDs are used everywhere (debug IDs, component keys, etc.)
+  // Real Postmark tokens would need context-aware detection (near "postmark" string)
+  // TODO: Add context-aware Postmark detection that looks for UUIDs near postmark API calls
   // Resend (popular with vibe coders)
   {
     name: 'Resend API Key',

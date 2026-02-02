@@ -12,15 +12,59 @@ const HIGH_IMPACT_EXPLANATIONS: Record<string, { short: string; risk: string }> 
   },
   'No DMARC record': {
     short: 'No DMARC record',
-    risk: 'email spoofing protection is missing - works with SPF to stop fake emails.'
+    risk: 'anyone can send emails pretending to be from your domain. One DNS record fixes this.'
   },
   'API Key': {
     short: 'Exposed API key',
     risk: 'someone could use your API key and rack up charges on your account.'
   },
+  'Token exposed': {
+    short: 'API token exposed in JavaScript',
+    risk: 'someone could use your token to send emails/make API calls and you\'d get the bill.'
+  },
+  'Postmark': {
+    short: 'Postmark email token exposed',
+    risk: 'your Postmark token is in public JavaScript - anyone can send emails from your account.'
+  },
+  'SendGrid': {
+    short: 'SendGrid API key exposed',
+    risk: 'your SendGrid key is visible - someone could send emails as you or exhaust your quota.'
+  },
+  'Twilio': {
+    short: 'Twilio credentials exposed',
+    risk: 'your Twilio credentials are visible - someone could send SMS/calls on your account.'
+  },
+  'Mailgun': {
+    short: 'Mailgun API key exposed',
+    risk: 'your Mailgun key is visible - someone could send emails from your domain.'
+  },
+  'Resend': {
+    short: 'Resend API key exposed',
+    risk: 'your Resend key is in public code - anyone can send emails from your account.'
+  },
   'OpenAI': {
     short: 'OpenAI key exposed',
     risk: 'your OpenAI key is in your public code - someone could use it and you\'d get the bill.'
+  },
+  'Anthropic': {
+    short: 'Anthropic (Claude) key exposed',
+    risk: 'your Claude API key is visible - someone could use your credits.'
+  },
+  'Stripe Secret': {
+    short: 'Stripe SECRET key exposed',
+    risk: 'your Stripe secret key is visible - this gives full access to your payment data!'
+  },
+  'Firebase Private': {
+    short: 'Firebase admin key exposed',
+    risk: 'your Firebase admin credentials are visible - full access to your database.'
+  },
+  'MongoDB': {
+    short: 'Database credentials exposed',
+    risk: 'your database connection string is visible - anyone can access your data.'
+  },
+  'PostgreSQL': {
+    short: 'Database credentials exposed',
+    risk: 'your database connection string is visible - anyone can access your data.'
   },
   'Stripe': {
     short: 'Stripe key exposed',
@@ -42,10 +86,6 @@ const HIGH_IMPACT_EXPLANATIONS: Record<string, { short: string; risk: string }> 
   'Firebase': {
     short: 'Firebase credentials exposed',
     risk: 'Firebase admin credentials are visible - full access to your Firebase project.'
-  },
-  'Resend': {
-    short: 'Resend key exposed',
-    risk: 'your email API key is public - someone could send emails from your account.'
   },
   'Clerk': {
     short: 'Clerk secret key exposed',
